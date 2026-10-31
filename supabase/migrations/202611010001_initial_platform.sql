@@ -209,6 +209,20 @@ create policy "rate_limit_no_client_access" on public.api_rate_limits for all to
 
 revoke all on function public.consume_api_rate_limit(text, integer, integer) from public;
 grant execute on function public.consume_api_rate_limit(text, integer, integer) to authenticated;
+revoke all on function public.is_workspace_member(uuid) from public;
+grant execute on function public.is_workspace_member(uuid) to authenticated;
+revoke all on function public.handle_new_user() from public;
+
+grant select, update on public.profiles to authenticated;
+grant select, update on public.workspaces to authenticated;
+grant select on public.workspace_members to authenticated;
+grant select, insert, update, delete on public.conversations to authenticated;
+grant select, insert, update, delete on public.messages to authenticated;
+grant select, insert, update, delete on public.knowledge_documents to authenticated;
+grant select, insert, update, delete on public.content_projects to authenticated;
+grant select, insert, update, delete on public.generation_jobs to authenticated;
+grant select on public.audit_events to authenticated;
+
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('workspace-assets', 'workspace-assets', false, 26214400,
