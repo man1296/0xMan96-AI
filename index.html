@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
+  <title>Orbit AI — Chat & Agents</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://js.puter.com/v2/"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><span></span><span></span><span></span></div>
+        <div><b>orbit</b><small>AI WORKSPACE</small></div>
+      </div>
+      <button class="new-chat" id="newChat"><span>＋</span> New chat <kbd>⌘ K</kbd></button>
+      <div class="side-label">WORKSPACE</div>
+      <button class="nav-item active" data-view="chat"><span class="nav-icon">◉</span> Chat <span class="nav-count" id="chatCount">0</span></button>
+      <button class="nav-item" data-view="agents"><span class="nav-icon">✳</span> Agents <span class="nav-count" id="agentCount">0</span></button>
+      <div class="side-label history-label">RECENT CHATS <button id="clearChats" title="Clear history">⌫</button></div>
+      <div id="historyList" class="history-list"></div>
+      <div class="sidebar-bottom">
+        <div class="connection"><span class="status-dot" id="statusDot"></span><span id="connectionText">Checking Puter…</span></div>
+        <button class="profile" id="signInBtn"><div class="avatar">O</div><div><b id="userName">Guest workspace</b><small id="userStatus">Connect Puter account</small></div><span class="profile-arrow">↗</span></button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu">☰</button>
+        <div class="breadcrumbs"><span>Workspace</span><i>/</i><b id="pageTitle">Chat</b></div>
+        <div class="top-actions">
+          <span class="model-indicator"><span class="pulse"></span> PUTER AI</span>
+          <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
+        </div>
+      </header>
+
+      <section class="view active" id="chatView">
+        <div class="chat-layout">
+          <div class="chat-main">
+            <div class="welcome" id="welcome">
+              <div class="eyebrow"><span class="eyebrow-line"></span> YOUR INTELLIGENCE, IN ORBIT</div>
+              <h1>Ideas in.<br><em>Momentum out.</em></h1>
+              <p>A clear space to think, build, research, and get things done with AI.</p>
+              <div class="suggestions">
+                <button class="suggestion" data-prompt="Explain how autonomous AI agents work, with a practical example."><span>↗</span><b>Explore a concept</b><small>Understand something complex</small></button>
+                <button class="suggestion" data-prompt="Help me plan and prioritize my week. Ask for the missing context first."><span>▦</span><b>Plan my week</b><small>Turn goals into next steps</small></button>
+                <button class="suggestion" data-prompt="Review this idea critically. Identify assumptions, risks, and a better approach."><span>⌁</span><b>Challenge an idea</b><small>Find gaps before they find you</small></button>
+              </div>
+            </div>
+            <div class="messages" id="messages" aria-live="polite"></div>
+            <div class="composer-wrap">
+              <div class="composer">
+                <textarea id="promptInput" rows="1" placeholder="Message Orbit AI…"></textarea>
+                <div class="composer-footer">
+                  <div class="composer-tools"><span class="composer-hint">↵ to send · Shift + ↵ for new line</span></div>
+                  <div class="composer-right"><span id="selectedModelLabel">Auto model</span><button class="send-btn" id="sendBtn" title="Send message">↑</button></div>
+                </div>
+              </div>
+              <div class="disclaimer">AI can make mistakes. Verify important information.</div>
+            </div>
+          </div>
+          <aside class="context-panel">
+            <div class="panel-heading">SESSION <span class="live-tag">LIVE</span></div>
+            <div class="context-card"><div class="context-icon">✳</div><b>Model</b><p id="contextModel">Auto · Puter AI</p><small>Choose from models available to your Puter account in settings.</small></div>
+            <div class="context-card"><div class="context-icon">⌘</div><b>Private by default</b><p>Local chat history</p><small>Conversations stay in this browser unless you connect cloud storage yourself.</small></div>
+            <div class="context-tip"><span>✦ QUICK TIP</span><p>Use an Agent when you want a repeatable role with its own instructions.</p><button id="goAgents">Explore agents ↗</button></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="agentsView">
+        <div class="agents-page">
+          <div class="page-intro"><div><div class="eyebrow"><span class="eyebrow-line"></span> SPECIALIZED WORKFLOWS</div><h1>Your agents.<br><em>Your rules.</em></h1><p>Create focused assistants with custom instructions for recurring tasks.</p></div><button class="primary-btn" id="createAgent">＋ Create agent</button></div>
+          <div class="agent-grid" id="agentGrid"></div>
+          <div class="agent-editor hidden" id="agentEditor">
+            <div class="editor-head"><div><span class="eyebrow">AGENT CONFIGURATION</span><h2 id="editorTitle">Create an agent</h2></div><button class="icon-btn" id="closeEditor">✕</button></div>
+            <label>Agent name<input id="agentName" maxlength="40" placeholder="e.g. Research Analyst"></label>
+            <label>What should this agent do?<textarea id="agentInstructions" rows="5" placeholder="You are a careful research analyst. Separate facts from assumptions, cite sources when available, and identify uncertainty…"></textarea></label>
+            <div class="editor-actions"><button class="text-btn" id="cancelAgent">Cancel</button><button class="primary-btn" id="saveAgent">Save agent</button></div>
+          </div>
+          <div class="agent-run hidden" id="agentRun">
+            <div class="editor-head"><div><span class="eyebrow">AGENT RUN</span><h2 id="runAgentName">Agent</h2></div><button class="icon-btn" id="closeRun">✕</button></div>
+            <p class="muted">Give this agent a task. Its instructions will guide the response.</p>
+            <textarea id="agentTask" rows="4" placeholder="Describe the task and include any relevant context…"></textarea>
+            <button class="primary-btn" id="runAgentBtn">Run agent <span>→</span></button>
+            <div id="agentOutput" class="agent-output"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="settingsModal">
+    <div class="modal">
+      <div class="modal-head"><div><span class="eyebrow">PREFERENCES</span><h2>Settings</h2></div><button class="icon-btn" id="closeSettings">✕</button></div>
+      <label>AI model<select id="modelSelect"><option value="">Auto · default model</option></select></label>
+      <p class="field-note">Models are loaded from Puter.js when available. Access and pricing depend on your Puter account and selected provider.</p>
+      <div class="settings-row"><div><b>Theme</b><small>Interface appearance</small></div><select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select></div>
+      <div class="settings-row"><div><b>Account</b><small id="accountDetails">Not connected</small></div><button class="secondary-btn" id="settingsSignIn">Connect</button></div>
+      <div class="modal-foot"><button class="primary-btn" id="saveSettings">Done</button></div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
