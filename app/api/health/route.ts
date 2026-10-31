@@ -5,14 +5,15 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const checks = {
-    supabase: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-    aiGateway: Boolean(process.env.AI_GATEWAY_BASE_URL && process.env.AI_GATEWAY_API_KEY && process.env.AI_DEFAULT_MODEL)
+    supabaseConfigured: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    aiGatewayConfigured: Boolean(process.env.AI_GATEWAY_BASE_URL && process.env.AI_GATEWAY_API_KEY && process.env.AI_DEFAULT_MODEL)
   };
-  const configured = checks.supabase;
+  const readyForAuth = checks.supabaseConfigured;
   return NextResponse.json({
     service: "0xMan96 AI API",
-    status: configured ? "operational" : "not_configured",
+    status: readyForAuth ? "configuration_present" : "configuration_missing",
     checks,
+    note: "This endpoint checks environment configuration only; it does not certify upstream availability.",
     timestamp: new Date().toISOString()
-  }, { status: configured ? 200 : 503, headers: { "Cache-Control": "no-store" } });
+  }, { status: readyForAuth ? 200 : 503, headers: { "Cache-Control": "no-store" } });
 }
