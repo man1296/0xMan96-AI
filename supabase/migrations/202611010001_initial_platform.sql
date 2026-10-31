@@ -200,10 +200,20 @@ create policy "workspace_select_members" on public.workspaces for select to auth
 create policy "workspace_update_owner" on public.workspaces for update to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 create policy "member_select_workspace" on public.workspace_members for select to authenticated using (public.is_workspace_member(workspace_id));
 create policy "conversation_member_access" on public.conversations for all to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id)) with check (user_id = auth.uid() and public.is_workspace_member(workspace_id));
-create policy "message_member_access" on public.messages for all to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id)) with check (user_id = auth.uid() and public.is_workspace_member(workspace_id));
-create policy "document_member_access" on public.knowledge_documents for all to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id)) with check (user_id = auth.uid() and public.is_workspace_member(workspace_id));
+create policy "message_member_read" on public.messages for select to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id));
+create policy "message_member_insert" on public.messages for insert to authenticated with check (user_id = auth.uid() and public.is_workspace_member(workspace_id) and role in ('user','assistant'));
+create policy "message_member_update" on public.messages for update to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id) and role in ('user','assistant')) with check (user_id = auth.uid() and public.is_workspace_member(workspace_id) and role in ('user','assistant'));
+create policy "message_member_delete" on public.messages for delete to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id) and role in ('user','assistant'));
+
+create policy "document_member_read" on public.knowledge_documents for select to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id));
+create policy "document_member_insert" on public.knowledge_documents for insert to authenticated with check (user_id = auth.uid() and public.is_workspace_member(workspace_id) and status = 'uploading');
+create policy "document_member_update" on public.knowledge_documents for update to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id) and status = 'uploading') with check (user_id = auth.uid() and public.is_workspace_member(workspace_id) and status = 'uploaded');
+create policy "document_member_delete" on public.knowledge_documents for delete to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id));
+
 create policy "content_member_access" on public.content_projects for all to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id)) with check (user_id = auth.uid() and public.is_workspace_member(workspace_id));
-create policy "job_member_access" on public.generation_jobs for all to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id)) with check (user_id = auth.uid() and public.is_workspace_member(workspace_id));
+create policy "job_member_read" on public.generation_jobs for select to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id));
+create policy "job_member_insert" on public.generation_jobs for insert to authenticated with check (user_id = auth.uid() and public.is_workspace_member(workspace_id) and status = 'queued' and attempts = 0 and started_at is null and completed_at is null);
+create policy "job_member_delete_queued" on public.generation_jobs for delete to authenticated using (user_id = auth.uid() and public.is_workspace_member(workspace_id) and status = 'queued');
 create policy "audit_member_read" on public.audit_events for select to authenticated using (workspace_id is not null and public.is_workspace_member(workspace_id));
 create policy "rate_limit_no_client_access" on public.api_rate_limits for all to authenticated using (false) with check (false);
 
@@ -218,9 +228,12 @@ grant select, update on public.workspaces to authenticated;
 grant select on public.workspace_members to authenticated;
 grant select, insert, update, delete on public.conversations to authenticated;
 grant select, insert, update, delete on public.messages to authenticated;
-grant select, insert, update, delete on public.knowledge_documents to authenticated;
+grant select, insert, delete on public.knowledge_documents to authenticated;
+revoke update on public.knowledge_documents from authenticated;
+grant update (status) on public.knowledge_documents to authenticated;
 grant select, insert, update, delete on public.content_projects to authenticated;
-grant select, insert, update, delete on public.generation_jobs to authenticated;
+grant select, insert, delete on public.generation_jobs to authenticated;
+revoke update on public.generation_jobs from authenticated;
 grant select on public.audit_events to authenticated;
 
 
