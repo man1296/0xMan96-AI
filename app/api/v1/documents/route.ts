@@ -1,3 +1,4 @@
+import { readJson } from "@/lib/http/read-json";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -38,7 +39,10 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+    let raw: unknown;
+    try { raw = await readJson(request, 8 * 1024); }
+    catch (error) { const tooLarge = error instanceof Error && error.message === "request_too_large"; return NextResponse.json({ error: tooLarge ? "payload_too_large" : "invalid_json" }, { status: tooLarge ? 413 : 400 }); }
+    const parsed = requestSchema.safeParse(raw);
     if (!parsed.success) return NextResponse.json({ error: "invalid_request", details: parsed.error.flatten() }, { status: 400 });
 
     const { workspaceId, name, mimeType, sizeBytes } = parsed.data;
