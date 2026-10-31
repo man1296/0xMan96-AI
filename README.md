@@ -65,3 +65,21 @@ The Creator Studio supports content planning and production workflows for:
 - Social media publishing is not connected. The app creates assets and copy; users review and publish manually.
 - Generated platform advice can become outdated. Check current platform specifications, copyright, music licensing and disclosure rules before posting.
 - Puter usage may incur charges depending on model/provider and account allowance.
+
+
+## Reliability upgrade (roadmap branch)
+- Corrected generated image preview rendering so image outputs use an image element rather than an audio element.
+- Added bounded local chat history writes and graceful LocalStorage quota handling.
+- Added IndexedDB persistence for extracted knowledge documents on the current browser/device.
+- Added keyword-ranked document chunk retrieval for relevant local context on each AI request. This is a lightweight local retrieval layer, not embedding-based semantic search.
+- Added creator planning tools for thumbnail briefs, carousel storyboards and a 7-day platform-aware content calendar.
+- Added a local privacy note and explicit boundaries around browser-local schedules and manual publishing.
+
+## Still requires infrastructure or provider verification
+- True token streaming is not enabled because the current app's Puter chat integration has not been verified against a documented streaming response contract.
+- Cross-device cloud sync requires an authenticated cloud database/storage design and user consent.
+- Server-side durable schedules require a backend/cron provider.
+- Publishing integrations require platform OAuth apps, permissions, review and provider-specific API implementation.
+- A frame-accurate multitrack video editor requires a dedicated media pipeline/editor; this static frontend only offers provider-dependent AI video generation/edit requests.
+- Semantic embedding search, user account tenancy, audit logs, rate limiting and server-side secret management require backend infrastructure.
+- No production security certification or end-to-end runtime test is claimed by this patch.
