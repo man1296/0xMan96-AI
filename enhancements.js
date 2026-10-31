@@ -51,7 +51,7 @@ window.renderDocuments=function(){
  el.innerHTML=documents.map(d=>'<div class="document-row"><div><b>'+esc(d.name)+'</b><small>'+Math.round((d.size||0)/1024)+' KB · '+String(d.text||"").length.toLocaleString()+' characters · local device</small></div><button type="button" data-local-doc="'+esc(d.id)+'">Remove</button></div>').join("")||'<p class="muted">No documents added yet.</p>';
  el.querySelectorAll("[data-local-doc]").forEach(b=>b.onclick=async()=>{const id=b.dataset.localDoc;documents=documents.filter(d=>d.id!==id);try{await dbOp("readwrite",s=>s.delete(id))}catch{}window.renderDocuments()});
 };
-function terms(s){return [...new Set((String(s).toLowerCase().match(/[\\p{L}\\p{N}_-]{2,}/gu)||[]).filter(t=>!["yang","dan","atau","the","and","for","with","from","this","that","untuk","dengan"].includes(t)))];}
+function terms(s){return [...new Set((String(s).toLowerCase().match(/[\p{L}\p{N}_-]{2,}/gu)||[]).filter(t=>!["yang","dan","atau","the","and","for","with","from","this","that","untuk","dengan"].includes(t)))];}
 function relevant(query){
  const ts=terms(query),chunks=[];
  if(!ts.length)return chunks;
