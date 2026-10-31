@@ -1,2 +1,6 @@
 import type { z } from "zod";
-export const chatRequestSchema: z.ZodTypeAny;
+type ChatRequest = {
+  messages: Array<{ role: "user" | "assistant"; content: string }>;
+  model?: string;
+};
+export const chatRequestSchema: z.ZodType<ChatRequest>;
