@@ -46,7 +46,7 @@ Run `python3 -m http.server 8000` in this folder and open `http://localhost:8000
 - No smart contract audit, investment advice, or guaranteed security assessment is provided.
 
 ## Privacy
-Chat history and agent configuration are stored in this browser's LocalStorage. Uploaded document text is held in page memory for the current session and is not automatically uploaded to a server by this app. Requests to AI providers and public APIs send the prompt or query required to perform the requested task.
+Chat history and agent configuration are stored in this browser's LocalStorage. Uploaded document text is persisted in this browser's IndexedDB on the current device and is not automatically synchronized to a server by this app. Requests to AI providers and public APIs send the prompt, relevant retrieved document excerpts, or query required to perform the requested task. Browser-local storage is not encrypted by this app; do not store secrets or highly sensitive information here.
 
 
 ## Creator Studio
