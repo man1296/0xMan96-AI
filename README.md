@@ -8,6 +8,7 @@ The existing static HTML/CSS/JavaScript workspace remains available on GitHub Pa
 - Local preview: `python3 -m http.server 8000`.
 
 ## New backend foundation
+- Security-patched Next.js 15.5.28, React 19.1.10 and Sharp 0.35.5 baseline; track framework advisories and update immediately when fixes ship.
 - Next.js App Router application at the repository root.
 - Supabase Auth via SSR cookies, Postgres, row-level security and private Storage.
 - Multi-tenant schema for profiles, workspaces, conversations, messages, knowledge documents, creator projects, generation jobs, audit events and API rate limits.
