@@ -4,11 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b0d12">
-  <title>Orbit AI — Chat & Agents</title>
+  <title>0xMan96 AI — Multi-Agent & Creator Workspace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://js.puter.com/v2/"></script>
 </head>
 <body>
@@ -16,12 +17,18 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="brand-mark"><span></span><span></span><span></span></div>
-        <div><b>orbit</b><small>AI WORKSPACE</small></div>
+        <div><b>0xMan96</b><small>AI WORKSPACE</small></div>
       </div>
       <button class="new-chat" id="newChat"><span>＋</span> New chat <kbd>⌘ K</kbd></button>
       <div class="side-label">WORKSPACE</div>
       <button class="nav-item active" data-view="chat"><span class="nav-icon">◉</span> Chat <span class="nav-count" id="chatCount">0</span></button>
       <button class="nav-item" data-view="agents"><span class="nav-icon">✳</span> Agents <span class="nav-count" id="agentCount">0</span></button>
+      <div class="side-label">TOOLS</div>
+      <button class="nav-item" data-view="tools"><span class="nav-icon">⌘</span> Tool hub</button>
+      <button class="nav-item" data-view="documents"><span class="nav-icon">▤</span> Documents</button>
+      <button class="nav-item" data-view="image"><span class="nav-icon">▧</span> Image studio</button>
+      <button class="nav-item" data-view="creator"><span class="nav-icon">✦</span> Creator studio</button>
+      <button class="nav-item" data-view="automation"><span class="nav-icon">◷</span> Automations</button>
       <div class="side-label history-label">RECENT CHATS <button id="clearChats" title="Clear history">⌫</button></div>
       <div id="historyList" class="history-list"></div>
       <div class="sidebar-bottom">
@@ -44,7 +51,7 @@
         <div class="chat-layout">
           <div class="chat-main">
             <div class="welcome" id="welcome">
-              <div class="eyebrow"><span class="eyebrow-line"></span> YOUR INTELLIGENCE, IN ORBIT</div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> YOUR INTELLIGENCE, IN 0xMan96</div>
               <h1>Ideas in.<br><em>Momentum out.</em></h1>
               <p>A clear space to think, build, research, and get things done with AI.</p>
               <div class="suggestions">
@@ -56,9 +63,9 @@
             <div class="messages" id="messages" aria-live="polite"></div>
             <div class="composer-wrap">
               <div class="composer">
-                <textarea id="promptInput" rows="1" placeholder="Message Orbit AI…"></textarea>
+                <textarea id="promptInput" rows="1" placeholder="Message 0xMan96 AI…"></textarea>
                 <div class="composer-footer">
-                  <div class="composer-tools"><span class="composer-hint">↵ to send · Shift + ↵ for new line</span></div>
+                  <div class="composer-tools"><select id="agentSelect" aria-label="Choose agent"><option value="">0xMan96 AI · Auto</option></select><label class="attach-btn" for="quickFile">＋ File</label><input id="quickFile" type="file" accept=".txt,.md,.csv,.json,.pdf" hidden><span class="composer-hint">↵ to send · Shift + ↵ for new line</span></div>
                   <div class="composer-right"><span id="selectedModelLabel">Auto model</span><button class="send-btn" id="sendBtn" title="Send message">↑</button></div>
                 </div>
               </div>
@@ -93,6 +100,85 @@
           </div>
         </div>
       </section>
+      <section class="view" id="toolsView"><div class="utility-page"><div class="eyebrow">INTEGRATION DIRECTORY</div><h1>Tools that <em>do work.</em></h1><p class="muted">Live data sources and actions available to your agents. Public endpoints are used where possible.</p><div class="tool-grid" id="toolGrid"></div></div></section>
+      <section class="view" id="documentsView"><div class="utility-page"><div class="eyebrow">KNOWLEDGE WORKSPACE</div><h1>Your files.<br><em>Agent context.</em></h1><p class="muted">Add text, Markdown, CSV, JSON or PDF files. Extracted text stays in this browser and can be used by agents.</p><div class="upload-card"><label class="primary-btn" for="documentUpload">＋ Add documents</label><input id="documentUpload" type="file" multiple accept=".txt,.md,.csv,.json,.pdf" hidden><p class="field-note">PDF extraction uses PDF.js. Very large files may exceed the AI model's context window.</p></div><div id="documentList" class="document-list"></div></div></section>
+      <section class="view" id="imageView"><div class="utility-page"><div class="eyebrow">GENERATIVE VISUALS</div><h1>Image <em>studio.</em></h1><p class="muted">Generate images with Puter AI. Model availability and usage costs depend on your Puter account.</p><div class="upload-card"><label>Describe the image<textarea id="imagePrompt" rows="4" placeholder="A cinematic editorial illustration of a futuristic decentralized finance network…"></textarea></label><label>Image model (optional)<input id="imageModel" placeholder="Leave blank for default model"></label><button class="primary-btn" id="generateImage">Generate image →</button><div id="imageResult" class="image-result"></div></div></div></section>
+
+      <section class="view" id="creatorView">
+        <div class="utility-page creator-page">
+          <div class="eyebrow">MULTI-PLATFORM CONTENT WORKSPACE</div>
+          <h1>Create once.<br><em>Publish everywhere.</em></h1>
+          <p class="muted">Build content packs for YouTube, TikTok, Instagram, Threads and Facebook. Generate scripts, captions, image assets, voiceovers and short AI video clips. Review everything before publishing.</p>
+
+          <div class="creator-layout">
+            <div class="upload-card creator-form">
+              <div class="creator-section-title">01 / CONTENT BRIEF</div>
+              <label>Topic or idea<textarea id="creatorTopic" rows="4" placeholder="Example: 5 mistakes beginners make when exploring DeFi yields..."></textarea></label>
+              <label>Target audience<input id="creatorAudience" placeholder="Example: Indonesian beginner crypto investors"></label>
+              <label>Content objective<select id="creatorGoal"><option>Educate</option><option>Grow audience</option><option>Build authority</option><option>Generate leads</option><option>Promote a product</option><option>Entertain</option></select></label>
+              <label>Tone<select id="creatorTone"><option>Clear and conversational</option><option>Bold and opinionated</option><option>Educational and analytical</option><option>Funny and entertaining</option><option>Storytelling and emotional</option><option>Professional</option></select></label>
+              <label>Primary format<select id="creatorFormat"><option value="short">Short-form video (15–90 sec)</option><option value="long">Long-form YouTube video (5–15 min)</option><option value="carousel">Carousel / swipe post</option><option value="static">Single image post</option><option value="thread">Thread / text post</option><option value="campaign">Cross-platform campaign</option></select></label>
+              <label>Platforms</label>
+              <div class="platform-picks">
+                <label><input type="checkbox" name="creatorPlatform" value="YouTube" checked> YouTube</label>
+                <label><input type="checkbox" name="creatorPlatform" value="TikTok" checked> TikTok</label>
+                <label><input type="checkbox" name="creatorPlatform" value="Instagram" checked> Instagram</label>
+                <label><input type="checkbox" name="creatorPlatform" value="Threads" checked> Threads</label>
+                <label><input type="checkbox" name="creatorPlatform" value="Facebook" checked> Facebook</label>
+              </div>
+              <label>Extra notes (optional)<textarea id="creatorNotes" rows="3" placeholder="Brand voice, key facts, CTA, references, things to avoid..."></textarea></label>
+              <button class="primary-btn" id="createContentPack">Generate content pack →</button>
+              <p class="field-note">Uses the selected Puter AI chat model. Generated claims should be fact-checked before publishing.</p>
+            </div>
+
+            <div class="creator-output-column">
+              <div class="upload-card">
+                <div class="creator-section-title">02 / CONTENT PACK</div>
+                <div id="creatorPack" class="creator-result muted">Your script, hooks, captions, titles, hashtags, shot list and platform adaptations will appear here.</div>
+                <div class="creator-actions">
+                  <button class="secondary-btn" id="copyCreatorPack">Copy pack</button>
+                  <button class="secondary-btn" id="downloadCreatorPack">Download .md</button>
+                </div>
+              </div>
+
+              <div class="upload-card">
+                <div class="creator-section-title">03 / VISUAL & VIDEO PRODUCTION</div>
+                <label>Visual prompt<textarea id="creatorVisualPrompt" rows="3" placeholder="Describe the thumbnail, cover art, carousel visual or scene..."></textarea></label>
+                <div class="creator-two-actions">
+                  <button class="secondary-btn" id="creatorMakeImage">Generate image</button>
+                  <select id="creatorAspect"><option value="9:16">9:16 Vertical</option><option value="16:9">16:9 YouTube</option><option value="1:1">1:1 Square</option><option value="4:5">4:5 Portrait</option></select>
+                </div>
+                <div id="creatorImageResult" class="media-preview"></div>
+                <label>AI video prompt<textarea id="creatorVideoPrompt" rows="3" placeholder="Describe subject, action, camera movement, setting and mood..."></textarea></label>
+                <label>Video model (optional)<input id="creatorVideoModel" placeholder="Leave blank for provider default"></label>
+                <p class="field-note">AI video generation can incur usage charges. Use test mode only to preview a sample, not as a publishable clip.</p>
+                <div class="creator-two-actions">
+                  <button class="secondary-btn" id="creatorMakeVideo">Generate AI video</button>
+                  <label class="inline-check"><input type="checkbox" id="creatorVideoTest"> Test sample (no generation credits)</label>
+                </div>
+                <div id="creatorVideoResult" class="media-preview"></div>
+              </div>
+
+              <div class="upload-card">
+                <div class="creator-section-title">04 / EDITING & VOICEOVER</div>
+                <label>Upload a source video for AI-assisted editing<input type="file" id="creatorSourceVideo" accept="video/*"></label>
+                <label>Editing instructions<textarea id="creatorEditPrompt" rows="3" placeholder="Remove pauses, tighten pacing, add cinematic cuts, keep the speaker's meaning, create a vertical 9:16 version..."></textarea></label>
+                <button class="secondary-btn" id="creatorEditVideo">Process video with AI</button>
+                <p class="field-note">Video editing is model-dependent. This requests an AI edit, not a full timeline editor with frame-accurate manual controls.</p>
+                <div id="creatorEditResult" class="media-preview"></div>
+                <label>Voiceover text<textarea id="creatorVoiceText" rows="3" placeholder="Paste narration or a script (max 3,000 characters)..."></textarea></label>
+                <div class="creator-two-actions">
+                  <button class="secondary-btn" id="creatorMakeVoice">Generate voiceover</button>
+                  <button class="secondary-btn" id="creatorTranscribe">Transcribe audio</button>
+                </div>
+                <label>Audio file for transcription<input type="file" id="creatorAudioFile" accept="audio/*"></label>
+                <div id="creatorAudioResult" class="media-preview"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="view" id="automationView"><div class="utility-page"><div class="eyebrow">LOCAL SCHEDULES</div><h1>Automate the <em>routine.</em></h1><p class="muted">Schedules run in this browser while 0xMan96 AI is open. They are not server-side cron jobs and cannot run if the browser is closed.</p><div class="upload-card"><label>Task name<input id="automationName" placeholder="Daily DeFi market brief"></label><label>Prompt<textarea id="automationPrompt" rows="3" placeholder="Summarize the latest DeFi TVL and notable changes…"></textarea></label><label>Run every<select id="automationInterval"><option value="60">Every hour</option><option value="360">Every 6 hours</option><option value="1440">Every 24 hours</option><option value="10080">Every 7 days</option></select></label><button class="primary-btn" id="addAutomation">＋ Save schedule</button></div><div id="automationList" class="document-list"></div></div></section>
     </main>
   </div>
 

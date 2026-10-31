@@ -1,38 +1,67 @@
-# Orbit AI — free starter
+# 0xMan96 AI — Multi-Agent Workspace
 
-A browser-based AI chat and agent workspace built with vanilla HTML, CSS, JavaScript, and Puter.js.
+A static HTML/CSS/JavaScript AI workspace for GitHub Pages, powered by Puter.js.
 
-## Run locally
-Puter.js needs an HTTP origin; do not open `index.html` as a `file://` URL.
+## Included agents
+- Research Agent
+- Crypto Market Agent
+- DeFi & RWA Agent
+- Blockchain Agent
+- Coding Agent
+- Document Agent
+- Image Agent
+- Automation Agent
 
-```bash
-python3 -m http.server 8000
-```
+## Integrations
+- Puter.js AI chat and function calling
+- Puter.js networking (`puter.net.fetch`) to reach public APIs without browser CORS restrictions
+- DuckDuckGo HTML search for web research
+- DEX Screener search API
+- DefiLlama public protocol API
+- Blockscout public explorer APIs (Ethereum, Base, Optimism, Arbitrum, Polygon)
+- GitHub public repository API
+- Puter.js text-to-image
+- TXT, MD, CSV, JSON and PDF text extraction
+- Browser-local recurring schedules
 
-Open http://localhost:8000.
+## Deploy to GitHub Pages
+1. Upload `index.html`, `style.css`, `app.js`, and `README.md` directly to the repository root.
+2. Open repository Settings → Pages.
+3. Choose **Deploy from a branch**, select `main` and `/(root)`, then Save.
+4. Open the published Pages URL and sign in to Puter when prompted.
 
-## Deploy free with GitHub Pages
-1. Create a **public** GitHub repository, e.g. `orbit-ai`.
-2. Upload `index.html`, `style.css`, and `app.js` (and this README).
-3. In GitHub, open **Settings → Pages**.
-4. Under **Build and deployment**, choose **Deploy from a branch**.
-5. Choose branch `main`, folder `/ (root)`, then Save.
-6. Wait for GitHub Pages to publish the site.
+## Local preview
+Run `python3 -m http.server 8000` in this folder and open `http://localhost:8000`.
 
-GitHub Pages is free for public repositories on GitHub Free. Your app is static; it does not require a paid server.
+## Important limitations
+- GitHub Pages remains a static host. No server-side secret storage is included.
+- Puter AI uses Puter's user-pays model. Users may incur charges or need credits depending on account and model; it is not guaranteed unlimited free AI.
+- Public APIs have rate limits and can change. DEX Screener, DefiLlama, Blockscout and GitHub responses are best-effort live data, not guaranteed uptime.
+- Web search uses DuckDuckGo HTML results via Puter networking. Search results can change and must be checked at their source.
+- GitHub integration reads public repository metadata/files only; it does not push commits or edit repositories.
+- Document extraction is local to the current browser session. PDF extraction is limited to the first 40 pages and text extraction quality depends on the PDF.
+- Image generation uses Puter AI and may consume the user's Puter allowance.
+- Automations are browser-local. They run only while the 0xMan96 AI page is open; they are not background server jobs or reliable alarm notifications.
+- Blockchain explorer lookup is search-only. It does not sign transactions, connect a wallet, or execute transfers.
+- No smart contract audit, investment advice, or guaranteed security assessment is provided.
 
-## Puter.js
-The app loads the official SDK from `https://js.puter.com/v2/`. It uses:
-- `puter.ai.chat()` for chat and agent runs
-- `puter.ai.listModels()` to populate the model selector
-- `puter.auth.signIn()`, `isSignedIn()`, and `getUser()` for Puter sign-in
+## Privacy
+Chat history and agent configuration are stored in this browser's LocalStorage. Uploaded document text is held in page memory for the current session and is not automatically uploaded to a server by this app. Requests to AI providers and public APIs send the prompt or query required to perform the requested task.
 
-Puter uses a user-pays model. The app developer does not need to provide an API key, but AI usage is associated with each end user's Puter account and may consume their allowance or incur charges depending on their plan and the selected model. Do not promise unlimited free usage.
 
-## Current scope
-- Streaming AI chat, local chat history, model selector, and copy/regenerate controls
-- Create/edit/delete custom instruction-based agents and run tasks
-- LocalStorage persistence and dark/light theme
-- Responsive layout
+## Creator Studio
+The Creator Studio supports content planning and production workflows for:
+- YouTube, TikTok, Instagram, Threads and Facebook
+- AI-generated content packs: hooks, scripts, shot lists, captions, titles, platform-specific adaptations, hashtags and editing checklists
+- AI image generation for thumbnails, covers and social visuals
+- AI text-to-video generation and image/video input workflows where supported by the selected Puter provider
+- AI-assisted source-video editing where the selected provider supports video input
+- AI voiceover generation (text-to-speech)
+- Audio transcription for turning recordings into draft captions or scripts
 
-Agents currently execute a single model call guided by their saved instructions. They are not autonomous multi-step agents and do not execute external tools. Conversation history is stored in this browser only. Use cloud sync, multi-user shared storage, and tool execution as future enhancements.
+### Creator workflow limitations
+- Video generation and AI video editing are model/provider dependent and may be chargeable. The test-sample option is for API testing and is not a finished creative deliverable.
+- This is not a frame-accurate NLE timeline editor. For precise trimming, keyframes, multi-track editing, subtitles and final export control, use a dedicated editor such as CapCut, DaVinci Resolve or Kdenlive.
+- Social media publishing is not connected. The app creates assets and copy; users review and publish manually.
+- Generated platform advice can become outdated. Check current platform specifications, copyright, music licensing and disclosure rules before posting.
+- Puter usage may incur charges depending on model/provider and account allowance.
