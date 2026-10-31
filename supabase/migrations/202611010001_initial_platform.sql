@@ -158,8 +158,9 @@ create or replace function public.consume_api_rate_limit(
 language plpgsql security definer
 set search_path = public
 as $$
-declare current_user_id uuid := auth.uid();
-declare allowed boolean;
+declare
+  current_user_id uuid := auth.uid();
+  allowed boolean;
 begin
   if current_user_id is null then raise exception 'authentication required' using errcode = '28000'; end if;
   if p_bucket !~ '^[a-z0-9:_-]{1,80}$' or p_max_requests not between 1 and 1000 or p_window_seconds not between 1 and 3600 then
