@@ -146,8 +146,37 @@ async function refreshAuth(){try{if(await puter.auth.isSignedIn()){const u=await
 async function signIn(){try{await puter.auth.signIn();await refreshAuth();toast("Puter account connected")}catch(e){toast(e.message||"Sign-in cancelled")}}
 const toolInfo=[['Web research','DuckDuckGo search + page reading/extraction, source URLs and retrieval timestamps','Research Agent'],['Bitcoin market data','CoinGecko + Binance: live BTC price, 24h range, volume and hourly candles','Crypto Market Agent'],['Crypto market','DEX Screener search: price, liquidity, volume, FDV','Crypto Market Agent'],['DeFi & RWA','DefiLlama public protocol TVL API','DeFi & RWA Agent'],['Blockchain explorer','Blockscout: Ethereum, Base, Optimism, Arbitrum, Polygon','Blockchain Agent'],['Coding & GitHub','GitHub public repo metadata and README/source file reader','Coding Agent'],['Documents','Browser extraction for TXT, MD, CSV, JSON and PDF','Document Agent'],['Image generation','Puter AI text-to-image','Image Agent'],['Automation','Local recurring schedules while browser is open','Automation Agent']];
 function renderTools(){$("toolGrid").innerHTML=toolInfo.map(x=>`<article class="tool-card"><span class="tool-status">AVAILABLE</span><h3>${x[0]}</h3><p>${x[1]}</p><small>${x[2]}</small></article>`).join("")}
-async function extractFile(file){let text="";const ext=file.name.split('.').pop().toLowerCase();if(ext==="pdf"){if(!window.pdfjsLib)throw Error("PDF reader library did not load.");pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;for(let i=1;i<=Math.min(pdf.numPages,40);i++){const page=await pdf.getPage(i),c=await page.getTextContent();text+=`\n[Page ${i}] `+c.items.map(x=>x.str).join(" ")}}else text=await file.text();return {id:uid(),name:file.name,size:file.size,text:text.slice(0,45000)}}
-async function addFiles(files){for(const f of files){try{documents.push(await extractFile(f));toast("Added "+f.name)}catch(e){toast(f.name+": "+e.message)}}renderDocuments()}
+const TEXT_FILE_EXTENSIONS=new Set(["txt","md","markdown","py","pyw","js","mjs","cjs","jsx","ts","tsx","html","htm","css","scss","json","jsonl","yaml","yml","toml","ini","cfg","conf","env","sh","bash","zsh","fish","ps1","bat","cmd","sql","xml","csv","tsv","log","rst","tex","go","rs","java","kt","kts","c","h","cpp","hpp","cs","php","rb","pl","lua","r","ipynb","graphql","gql","proto","dockerfile","makefile","gradle","properties","gitignore","dockerignore","editorconfig","lock","pem","crt","key","pub","tf","hcl","vue","svelte","astro","wasmtext"]);
+const TEXT_FILE_NAMES=new Set(["dockerfile","makefile","gnumakefile","readme","license","copying","notice","authors","contributors","changelog","dockerignore","gitignore","gitattributes","gitmodules","editorconfig","npmrc","nvmrc","yarnrc","browserslistrc"]);
+function fileExtension(name){const base=String(name||"").split(/[\\/]/).pop()||"";if(!base||!base.includes(".")||base.startsWith(".")&&base.indexOf(".",1)<0)return "";return base.split(".").pop().toLowerCase()}
+function isLikelyTextFile(file,buffer){
+ const base=file.name.split(/[\\/]/).pop().toLowerCase(),ext=fileExtension(file.name);
+ if(TEXT_FILE_NAMES.has(base)||TEXT_FILE_EXTENSIONS.has(ext))return true;
+ if(file.type.startsWith("text/")||/json|xml|javascript|typescript|yaml|sql|x-shellscript/.test(file.type))return true;
+ const sample=new Uint8Array(buffer.slice(0,Math.min(buffer.byteLength,8192)));
+ return !sample.includes(0);
+}
+async function extractFile(file){
+ const MAX_FILE_BYTES=20*1024*1024;
+ if(file.size>MAX_FILE_BYTES)throw Error("File exceeds 20 MB. Split it into smaller files.");
+ const base=file.name.split(/[\\/]/).pop(),ext=fileExtension(base);
+ let text="",kind="text",note="";
+ if(ext==="pdf"){
+  if(!window.pdfjsLib)throw Error("PDF reader library did not load.");
+  pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  for(let i=1;i<=Math.min(pdf.numPages,40);i++){const page=await pdf.getPage(i),items=await page.getTextContent();text+=`\\n[Page ${i}] `+items.items.map(x=>x.str).join(" ")}
+  kind="pdf";if(pdf.numPages>40)note="Only the first 40 PDF pages were extracted.";
+ }else{
+  const buffer=await file.arrayBuffer();
+  if(isLikelyTextFile(file,buffer)){
+   text=new TextDecoder("utf-8",{fatal:false}).decode(buffer);
+   if(text.includes("\\u0000")){text="";kind="binary";note="Binary file. Contents are not text-extracted."}
+  }else{kind="binary";note="Binary file. File metadata is available, but content requires a dedicated parser or multimodal tool."}
+ }
+ return {id:uid(),name:base,size:file.size,type:file.type||"unknown",kind,note,text:text.slice(0,45000)};
+}
+async function addFiles(files){for(const f of files){try{const doc=await extractFile(f);documents.push(doc);toast("Added "+f.name+(doc.kind==="binary"?" (metadata only)":""))}catch(e){toast(f.name+": "+e.message)}}renderDocuments()}
 function renderDocuments(){$("documentList").innerHTML=documents.map(d=>`<div class="document-row"><div><b>${esc(d.name)}</b><small>${Math.round(d.size/1024)} KB · ${d.text.length.toLocaleString()} extracted characters</small></div><button data-doc="${d.id}">Remove</button></div>`).join("")||'<p class="muted">No documents added in this session.</p>';document.querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>{documents=documents.filter(d=>d.id!==b.dataset.doc);renderDocuments()})}
 async function generateImage(){const prompt=$("imagePrompt").value.trim();if(!prompt)return toast("Describe the image first.");if(!puter?.ai?.txt2img)return toast("Image generation is unavailable.");const btn=$("generateImage");btn.disabled=true;btn.textContent="Generating…";$("imageResult").innerHTML="<p>Generating image. This may take a little while.</p>";try{const img=await puter.ai.txt2img(prompt,{model:$("imageModel").value.trim()||undefined});$("imageResult").innerHTML="";if(img instanceof HTMLElement){img.className="generated-image";$("imageResult").append(img)}else if(typeof img==="string"){$("imageResult").innerHTML=`<img class="generated-image" src="${esc(img)}" alt="Generated image">`}else{$("imageResult").textContent="Image generated, but the returned format could not be displayed."}}catch(e){$("imageResult").textContent="Image generation failed: "+e.message}finally{btn.disabled=false;btn.textContent="Generate image →"}}
 
