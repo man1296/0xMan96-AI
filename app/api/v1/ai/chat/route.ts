@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
     const selectedModel = parsed.data.model || defaultModel;
     const fallbackModels = selectedModel === defaultModel ? QUALITY_FALLBACK_MODELS : [];
-    const upstream = await fetch(new URL("chat/completions", gateway.toString().replace(/\\/$/, "") + "/"), {
+    const upstream = await fetch(new URL("chat/completions", gateway.toString().replace(/\/$/, "") + "/"), {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
