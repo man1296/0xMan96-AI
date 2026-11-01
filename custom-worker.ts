@@ -19,9 +19,16 @@ export default {
         {
           service: "0xMan96 AI Worker binding diagnostic",
           runtimeBindings: {
+            bindingDiagnostic:
+              typeof bindings.BINDING_DIAGNOSTIC === "string" &&
+              bindings.BINDING_DIAGNOSTIC.length > 0,
             openRouterApiKey: hasOpenRouterKey,
-            supabaseUrl: typeof bindings.NEXT_PUBLIC_SUPABASE_URL === "string",
-            supabaseAnonKey: typeof bindings.NEXT_PUBLIC_SUPABASE_ANON_KEY === "string"
+            supabaseUrl:
+              typeof bindings.NEXT_PUBLIC_SUPABASE_URL === "string" &&
+              bindings.NEXT_PUBLIC_SUPABASE_URL.length > 0,
+            supabaseAnonKey:
+              typeof bindings.NEXT_PUBLIC_SUPABASE_ANON_KEY === "string" &&
+              bindings.NEXT_PUBLIC_SUPABASE_ANON_KEY.length > 0
           },
           note: "Presence checks only. Secret values are never returned."
         },
