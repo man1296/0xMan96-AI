@@ -4,7 +4,7 @@
 
 The scheduled Cloudflare Worker invokes the authenticated internal Agent runtime every minute. The runtime atomically claims up to two queued tasks concurrently from Supabase, loads workspace Agent instructions and relevant Memory, executes a bounded Workflow, and persists task, Workflow-run, and step-run results.
 
-The database remains the source of truth. The queue RPC uses row locks with `SKIP LOCKED`, twelve-minute leases, bounded attempts, and stale-lease recovery.
+The database remains the source of truth. The queue RPC uses row locks with `SKIP LOCKED`, twelve-minute leases, bounded attempts, and stale-lease recovery. The scheduled Cloudflare tick first dispatches up to ten due recurring Workflow definitions, then claims up to two queued Agent tasks for execution.
 
 ## Workflow execution
 
@@ -20,6 +20,13 @@ Every step is persisted in `workflow_step_runs`. Steps requiring approval pause 
 
 The Workspace UI includes a Workflow library, a pending-approval panel, and persisted run/step history. Its current editor creates sequential reasoning steps; the server registry also supports Memory search and approval-gated Memory writes for workflows submitted through the API.
 
+## Recurring Workflow schedules
+
+Workflow definitions can be created as manual or recurring. The current recurring options are hourly, every 24 hours, or every 7 days. These are rolling intervals measured from activation or the previous dispatch, not wall-clock cron expressions; no timezone conversion is implied. Each scheduled Workflow stores its next due time in `next_run_at`.
+
+On each existing one-minute Cloudflare worker tick, the server calls the private `enqueue_due_workflow_schedules` RPC. The RPC locks due definitions with `FOR UPDATE SKIP LOCKED`, creates one durable `agent_tasks` row and one `workflow_runs` row in the same database transaction, and advances `next_run_at`. Concurrent worker ticks therefore cannot dispatch the same due schedule twice. At most ten due definitions are dispatched per tick; the normal worker then claims up to two tasks. A paused Workflow is excluded from dispatch and can be resumed from the Workflow library, which schedules its next run one full interval after resumption.
+
+The RPC runs as `SECURITY INVOKER`, is located in the non-exposed `private` schema, and is executable only by `service_role`. Invalid schedule interval data is disabled rather than executed.
 ## Required Cloudflare runtime secrets
 
 Configure these as Worker secrets, never as plaintext vars:
@@ -49,6 +56,7 @@ Add these values as GitHub Actions repository/environment secrets, then run the 
 - Add cancellation, timeout, per-user budgets, rate limits, and dead-letter review.
 - Add semantic/vector Memory retrieval and explicit Memory curation controls.
 - Add a full visual step editor and workflow versioning.
+- Add cron-expression scheduling, timezone-aware wall-clock schedules, and per-workflow schedule history.
 - Add observability, backup/restore drills, and independent security testing.
 - Deploy the latest branch and perform a real authenticated Cloudflare smoke test.
 
