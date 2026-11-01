@@ -148,3 +148,10 @@ test("scheduled Workflows can be paused and resumed by their authenticated owner
   assert.match(scheduleMigration, /revoke all on function private\.enqueue_due_workflow_schedules\(integer\) from public, anon, authenticated/i);
   assert.match(scheduleMigration, /grant execute on function private\.enqueue_due_workflow_schedules\(integer\) to service_role/i);
 });
+
+const scheduleGuardMigration = fs.readFileSync("supabase/migrations/20261101220831_workflow_schedule_invalid_interval_guard.sql", "utf8");
+
+test("invalid scheduled Workflow configuration is disabled safely", () => {
+  assert.match(scheduleGuardMigration, /coalesce\(v_interval, ''\) not in \('hourly', 'daily', 'weekly'\)/);
+  assert.match(scheduleGuardMigration, /set enabled = false, next_run_at = null/);
+});
