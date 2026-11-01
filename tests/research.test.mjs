@@ -31,7 +31,7 @@ test("searchWeb uses a fixed provider endpoint and bounds results", async () => 
     requested = { url: String(url), init };
     return new Response(html, { status: 200 });
   });
-  assert.match(requested.url, /^https:\/\/html\.duckduckgo\.com\/html\?/);
+  assert.match(requested.url, /^https:\/\/html\.duckduckgo\.com\/html\/\?/);
   assert.equal(new URL(requested.url).searchParams.get("q"), "test query");
   assert.equal(result.results.length, 1);
   assert.equal(result.provider, "DuckDuckGo");
