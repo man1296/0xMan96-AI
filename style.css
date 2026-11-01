@@ -86,3 +86,26 @@ body.light .msg-content strong{color:#202431}
 #agentDeleteDialog .modal-foot{gap:10px}
 @media(max-width:620px){.agent-run{max-height:calc(100dvh - 78px);min-height:280px}.agent-output{min-height:70px}}
 body.light .topbar{background:rgba(248,249,251,.97)}
+
+/* Stable viewport navigation and independent Agent result scrolling. */
+@media(max-width:900px){
+ .main{padding-top:56px!important}
+ .topbar{position:fixed!important;inset:0 0 auto 0!important;height:56px!important;z-index:100!important}
+ .mobile-menu{display:inline-flex!important;position:relative;z-index:101!important;flex:0 0 38px!important}
+ .sidebar{position:fixed!important;inset:0 auto 0 0!important;width:min(280px,85vw)!important;height:100dvh!important;max-height:100dvh!important;transform:translateX(-105%);left:0!important;z-index:110!important;transition:transform .22s ease!important;overflow-y:auto!important}
+ .sidebar.open{transform:translateX(0)!important}
+}
+@media(min-width:901px){.sidebar-close{display:none!important}}
+.sidebar .brand{position:relative;padding-right:46px}
+.sidebar-close{position:absolute;right:2px;top:0;width:36px;height:36px;border:0;border-radius:9px;background:#d83b46!important;color:#fff!important;font-size:26px;line-height:1;display:grid;place-items:center;z-index:3}
+.agents-page{display:flex;flex-direction:column;gap:18px}
+.agents-page .page-intro{order:0;margin-bottom:0}
+.agents-page .agent-editor,.agents-page .agent-run{order:1;width:100%;max-width:none;margin:0}
+.agents-page .agent-grid{order:2;width:100%}
+.agent-run{display:flex;flex-direction:column;height:min(680px,calc(100dvh - 120px));max-height:calc(100dvh - 90px);min-height:300px;overflow:hidden}
+.agent-run .editor-head{flex:0 0 auto;margin-bottom:10px}
+.agent-run>.muted{order:4;margin:8px 0 0}
+.agent-run #agentTask{order:1;flex:0 0 auto;margin:8px 0 10px}
+.agent-run #runAgentBtn{order:2;align-self:flex-start;flex:0 0 auto}
+.agent-run #agentOutput{order:3;flex:1 1 0;min-height:0;height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain;white-space:normal}
+.agent-output{min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;overflow-wrap:anywhere}
