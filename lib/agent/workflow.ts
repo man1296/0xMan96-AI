@@ -1,7 +1,7 @@
 export const MAX_WORKFLOW_STEPS = 6;
 export const MAX_STEP_INPUT_CHARS = 12000;
 
-export type WorkflowTool = "agent.reason" | "memory.search" | "memory.save";
+export type WorkflowTool = "agent.reason" | "memory.search" | "memory.save" | "web.search";
 export type WorkflowStep = {
   id: string;
   name: string;
@@ -10,7 +10,7 @@ export type WorkflowStep = {
   requiresApproval: boolean;
 };
 
-const ALLOWED_TOOLS = new Set<WorkflowTool>(["agent.reason", "memory.search", "memory.save"]);
+const ALLOWED_TOOLS = new Set<WorkflowTool>(["agent.reason", "memory.search", "memory.save", "web.search"]);
 
 export function validateWorkflowSteps(value: unknown): WorkflowStep[] {
   if (!Array.isArray(value) || value.length < 1 || value.length > MAX_WORKFLOW_STEPS) {
@@ -57,6 +57,16 @@ export function validateWorkflowSteps(value: unknown): WorkflowStep[] {
       }
       if (data.importance !== undefined && (!Number.isInteger(data.importance) || Number(data.importance) < 1 || Number(data.importance) > 5)) {
         throw new Error("invalid_memory_importance");
+      }
+    }
+    if (tool === "web.search") {
+      const query = (input as Record<string, unknown>).query;
+      const maxResults = (input as Record<string, unknown>).maxResults;
+      if (typeof query !== "string" || !query.trim() || query.length > 300) {
+        throw new Error("web_search_requires_query");
+      }
+      if (maxResults !== undefined && (!Number.isInteger(maxResults) || Number(maxResults) < 1 || Number(maxResults) > 8)) {
+        throw new Error("invalid_web_search_result_limit");
       }
     }
     return {
