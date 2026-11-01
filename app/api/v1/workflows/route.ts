@@ -41,6 +41,18 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return NextResponse.json({ error: "invalid_request", details: parsed.error.flatten() }, { status: 400 });
   const value = parsed.data;
+  if (value.scheduleInterval) {
+    const { count, error: scheduleCountError } = await supabase.from("workflow_definitions")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", value.workspaceId)
+      .eq("user_id", user.id)
+      .eq("trigger_type", "schedule")
+      .eq("enabled", true);
+    if (scheduleCountError) return NextResponse.json({ error: "workflow_schedule_limit_check_failed" }, { status: 400 });
+    if ((count ?? 0) >= 5) {
+      return NextResponse.json({ error: "active_workflow_schedule_limit_reached", limit: 5 }, { status: 429 });
+    }
+  }
   let steps;
   try { steps = validateWorkflowSteps(value.steps); }
   catch (error) {
