@@ -30,6 +30,7 @@ export async function POST(request:Request){
  const {data:workspace,error:workspaceError}=await supabase.from("workspaces").select("id").eq("id",v.workspaceId).maybeSingle();
  if(workspaceError||!workspace)return NextResponse.json({error:"workspace_not_found"},{status:404});
  if(v.agentId){const {data:agent,error:agentError}=await supabase.from("agents").select("id").eq("id",v.agentId).eq("workspace_id",v.workspaceId).eq("enabled",true).maybeSingle();if(agentError||!agent)return NextResponse.json({error:"agent_not_found"},{status:404});}
+ if(v.workflowId){const {data:workflow,error:workflowError}=await supabase.from("workflow_definitions").select("id").eq("id",v.workflowId).eq("workspace_id",v.workspaceId).eq("enabled",true).maybeSingle();if(workflowError||!workflow)return NextResponse.json({error:"workflow_not_found"},{status:404});}
  const {data:task,error:insertError}=await supabase.from("agent_tasks").insert({workspace_id:v.workspaceId,user_id:user.id,agent_id:v.agentId??null,workflow_id:v.workflowId??null,task:v.task,status:"queued"}).select("id,status,created_at").single();
  if(insertError||!task)return NextResponse.json({error:"task_enqueue_failed"},{status:400});
  const {data:run,error:runError}=await supabase.from("workflow_runs").insert({workspace_id:v.workspaceId,user_id:user.id,workflow_id:v.workflowId??null,agent_task_id:task.id,status:"queued",trigger_payload:{source:"agent_chat"}}).select("id").single();
