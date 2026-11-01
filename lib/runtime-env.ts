@@ -1,4 +1,3 @@
-import { env as nodeEnv } from "node:process";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export type RuntimeEnvSource = "process_env" | "open_next_context" | "missing";
@@ -19,7 +18,7 @@ function readRuntimeProcessEnv(name: string): string | undefined {
     case "OPENROUTER_API_KEY":
     case "OPENROUTER_DEFAULT_MODEL":
     case "OPENROUTER_BASE_URL":
-      return nodeEnv[name];
+      return process.env[name];
     case "NEXT_PUBLIC_SUPABASE_URL":
       return process.env.NEXT_PUBLIC_SUPABASE_URL;
     case "NEXT_PUBLIC_SUPABASE_ANON_KEY":
