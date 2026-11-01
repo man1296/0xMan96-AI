@@ -42,7 +42,7 @@ Add these values as GitHub Actions repository/environment secrets, then run the 
 
 1. Confirm all three secrets are configured in Cloudflare.
 2. Deploy the Worker and verify the scheduled trigger.
-3. Confirm the binding diagnostic reports service-role and worker-secret presence.
+3. Confirm the binding diagnostic reports service-role, worker-secret, and Workers AI binding presence.
 4. Enqueue a harmless task in an authenticated workspace.
 5. Confirm task state transitions to `succeeded` and the Workflow run plus step history are persisted.
 6. Test a `memory.save` step: it must pause at `awaiting_approval`; approve it in the UI and confirm the worker resumes.
