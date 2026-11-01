@@ -241,3 +241,11 @@ test("web research page retrieval is bounded, HTTPS-only, and redirect-validated
   assert.match(researchModule, /hostname === "localhost"/);
   assert.match(researchModule, /hostname\.endsWith\("\.local"\)/);
 });
+
+
+test("runtime diagnostics report Workers AI binding presence without exposing values", () => {
+  const customWorker = fs.readFileSync("custom-worker.ts", "utf8");
+  assert.match(customWorker, /workersAiBinding/);
+  assert.match(customWorker, /typeof \(bindings\.AI as \{ run\?: unknown \}\)\.run === "function"/);
+  assert.match(customWorker, /Secret values are never returned/);
+});
