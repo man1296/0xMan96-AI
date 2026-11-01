@@ -21,6 +21,15 @@ type AgentTask = {
 type Memory = { category: string; content: string; importance: number; pinned: boolean };
 type StepOutput = { stepId: string; name: string; tool: string; output: unknown };
 
+async function stableUuid(seed: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(seed));
+  const bytes = new Uint8Array(digest).slice(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map(value => value.toString(16).padStart(2, "0")).join("");
+  return hex.slice(0, 8) + "-" + hex.slice(8, 12) + "-" + hex.slice(12, 16) + "-" + hex.slice(16, 20) + "-" + hex.slice(20);
+}
+
 async function constantTimeMatch(left: string, right: string): Promise<boolean> {
   const encoder = new TextEncoder();
   const [a, b] = await Promise.all([
@@ -179,11 +188,12 @@ async function executeTask(
       if (error) throw new Error("memory_search_failed");
       output = data ?? [];
     } else if (step.tool === "memory.save") {
-      const { data, error } = await supabase.from("agent_memories").insert({
-        workspace_id: task.workspace_id, user_id: task.user_id, agent_id: task.agent_id,
+      const memoryId = await stableUuid(runId + ":" + index + ":memory.save");
+      const { data, error } = await supabase.from("agent_memories").upsert({
+        id: memoryId, workspace_id: task.workspace_id, user_id: task.user_id, agent_id: task.agent_id,
         category: step.input.category, content: step.input.content,
         source: "agent_workflow", importance: step.input.importance ?? 3, pinned: false
-      }).select("id,category,content,importance,created_at").single();
+      }, { onConflict: "id" }).select("id,category,content,importance,created_at").single();
       if (error || !data) throw new Error("memory_save_failed");
       output = data;
     } else {
@@ -260,7 +270,7 @@ export async function POST(request: Request) {
       await supabase.from("agent_tasks").update({
         status: terminal ? "failed" : "queued",
         run_at: new Date(Date.now() + Math.min(300000, 15000 * 2 ** Math.max(0, task.attempts - 1))).toISOString(),
-        lease_expires_at: null, last_error: message.slice(0, 240),
+        lease_expires_at: null, approval: {}, last_error: message.slice(0, 240),
         completed_at: terminal ? now : null, updated_at: now
       }).eq("id", task.id);
       await supabase.from("workflow_runs").update({
