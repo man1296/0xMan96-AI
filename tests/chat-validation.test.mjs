@@ -18,3 +18,10 @@ test("rejects empty and excessive conversation context", () => {
   assert.equal(chatRequestSchema.safeParse({ messages: [] }).success, false);
   assert.equal(chatRequestSchema.safeParse({ messages: Array.from({ length: 21 }, () => ({ role: "user", content: "x" })) }).success, false);
 });
+
+test("rejects unapproved models to prevent arbitrary provider spend", () => {
+  assert.equal(chatRequestSchema.safeParse({ messages: [{ role: "user", content: "hi" }], model: "some/unknown-model" }).success, false);
+});
+test("accepts an explicitly approved quality model", () => {
+  assert.equal(chatRequestSchema.safeParse({ messages: [{ role: "user", content: "hi" }], model: "qwen/qwen3.8-max" }).success, true);
+});
