@@ -84,7 +84,6 @@
       <section class="view" id="agentsView">
         <div class="agents-page">
           <div class="page-intro"><div><div class="eyebrow"><span class="eyebrow-line"></span> SPECIALIZED WORKFLOWS</div><h1>Your agents.<br><em>Your rules.</em></h1><p>Create focused assistants with custom instructions for recurring tasks.</p></div><button class="primary-btn" id="createAgent">＋ Create agent</button></div>
-          <div class="agent-grid" id="agentGrid"></div>
           <div class="agent-editor hidden" id="agentEditor">
             <div class="editor-head"><div><span class="eyebrow">AGENT CONFIGURATION</span><h2 id="editorTitle">Create an agent</h2></div><button class="icon-btn" id="closeEditor">✕</button></div>
             <label>Agent name<input id="agentName" maxlength="40" placeholder="e.g. Research Analyst"></label>
@@ -98,6 +97,7 @@
             <button class="primary-btn" id="runAgentBtn">Run agent <span>→</span></button>
             <div id="agentOutput" class="agent-output"></div>
           </div>
+          <div class="agent-grid" id="agentGrid"></div>
         </div>
       </section>
       <section class="view" id="toolsView"><div class="utility-page"><div class="eyebrow">INTEGRATION DIRECTORY</div><h1>Tools that <em>do work.</em></h1><p class="muted">Live data sources and actions available to your agents. Public endpoints are used where possible.</p><div class="tool-grid" id="toolGrid"></div></div></section>
@@ -195,5 +195,6 @@
   <div class="toast" id="toast"></div>
   <script src="app.js"></script>
   <script src="enhancements.js"></script>
+  <script src="ui-fixes.js"></script>
 </body>
 </html>
