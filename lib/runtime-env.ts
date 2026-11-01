@@ -9,25 +9,26 @@ export interface RuntimeEnvResult {
 
 /**
  * Read server-side configuration from the Cloudflare Worker runtime.
- * Use an explicit property access for the OpenRouter secret so the access
- * matches Cloudflare's documented process.env pattern. Keep dynamic access
- * for NEXT_PUBLIC_* values to avoid Next.js build-time inlining.
+ * Use literal bracket access so each key is statically identifiable without
+ * relying on a dynamic property name or dot-property replacement.
  * Never log or expose returned secret values.
  */
 function readProcessEnv(name: string): string | undefined {
   switch (name) {
     case "OPENROUTER_API_KEY":
-      return process.env.OPENROUTER_API_KEY;
+      return process.env["OPENROUTER_API_KEY"];
     case "OPENROUTER_DEFAULT_MODEL":
-      return process.env.OPENROUTER_DEFAULT_MODEL;
+      return process.env["OPENROUTER_DEFAULT_MODEL"];
     case "OPENROUTER_BASE_URL":
-      return process.env.OPENROUTER_BASE_URL;
+      return process.env["OPENROUTER_BASE_URL"];
     case "NEXT_PUBLIC_SUPABASE_URL":
+      return process.env["NEXT_PUBLIC_SUPABASE_URL"];
     case "NEXT_PUBLIC_SUPABASE_ANON_KEY":
+      return process.env["NEXT_PUBLIC_SUPABASE_ANON_KEY"];
     case "NEXT_PUBLIC_APP_URL":
-      return process.env[name];
+      return process.env["NEXT_PUBLIC_APP_URL"];
     default:
-      return process.env[name];
+      return undefined;
   }
 }
 
