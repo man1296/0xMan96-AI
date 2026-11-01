@@ -36,3 +36,26 @@ body.light .creator-form,body.light .creator-output-column .upload-card{backgrou
 body.light .creator-form input,body.light .creator-form textarea,body.light .creator-form select,body.light .creator-output-column input,body.light .creator-output-column textarea,body.light .creator-output-column select{background:#f8f9fb;color:#202431}
 @media(max-width:900px){.creator-layout{grid-template-columns:1fr}.creator-form{position:static}}
 @media(max-width:620px){.creator-layout{gap:12px}.platform-picks{grid-template-columns:1fr 1fr}.creator-two-actions{align-items:stretch}.creator-two-actions button{flex:1}}
+
+/* 0xMan96 AI: persistent navigation and readable assistant output */
+.topbar{position:sticky;top:0;z-index:20;background:rgba(11,13,18,.94);backdrop-filter:blur(14px)}
+.mobile-menu{flex:0 0 auto;min-width:36px;min-height:36px;border:1px solid var(--line);border-radius:9px}
+.msg-content{font-size:14px;line-height:1.8}
+.msg-content h1,.msg-content h2,.msg-content h3,.msg-content h4{font-family:"Space Grotesk",sans-serif;line-height:1.3;margin:22px 0 10px;color:var(--text)}
+.msg-content h1{font-size:1.55em}.msg-content h2{font-size:1.35em}.msg-content h3,.msg-content h4{font-size:1.15em}
+.msg-content p{margin:0 0 13px}.msg-content ul,.msg-content ol{padding-left:24px;margin:8px 0 16px}
+.msg-content li{padding-left:4px;margin:5px 0}.msg-content blockquote{margin:12px 0;padding:10px 15px;border-left:3px solid var(--accent);background:#171522;color:#c5cada;border-radius:0 8px 8px 0}
+.msg-content strong{color:#fff;font-weight:700}.msg-content em{color:#d8d0f5}
+.msg-content a{color:#b9a8ff;text-decoration:underline;text-underline-offset:3px}
+.msg-content code{background:#252039;border-radius:5px;padding:2px 5px;white-space:break-spaces}
+.msg-content pre{margin:12px 0 16px;max-width:100%;white-space:pre;overflow:auto;line-height:1.6}
+.msg-content pre code{display:block;background:transparent;padding:0;color:#d8d2ef}
+.agent-output{white-space:normal;overflow-wrap:anywhere;font-size:13px;line-height:1.8}
+.agent-output h1,.agent-output h2,.agent-output h3{font-family:"Space Grotesk",sans-serif;margin:18px 0 8px}
+.agent-output p{margin:0 0 12px}.agent-output ul,.agent-output ol{padding-left:22px;margin:8px 0 14px}
+.agent-output li{margin:5px 0}.agent-output pre{padding:12px;background:#080a0f;border:1px solid var(--line);border-radius:9px;overflow:auto}
+.agent-output code{font:12px "DM Mono";color:#c8baff}.agent-output a{color:#b9a8ff}
+.agent-card-actions button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:620px){.topbar{position:sticky;top:0;z-index:30}.breadcrumbs{min-width:0}.top-actions{gap:8px}}
+body.light .topbar{background:rgba(248,249,251,.94)}
+body.light .msg-content strong{color:#202431}
