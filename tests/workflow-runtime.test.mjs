@@ -117,3 +117,10 @@ test("Cloudflare deploy script validates all secrets before deploying", () => {
   assert.ok(script.indexOf("for secret_name in OPENROUTER_API_KEY SUPABASE_SERVICE_ROLE_KEY AGENT_WORKER_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID") < script.indexOf("npx opennextjs-cloudflare deploy"));
   assert.match(script, /wrangler secret put "\$secret_name"/);
 });
+
+test("the platform home routes authenticated users into the unified workspace", () => {
+  const home = fs.readFileSync("app/page.tsx", "utf8");
+  assert.match(home, /supabase\.auth\.getUser/);
+  assert.match(home, /redirect\("\/workspace"\)/);
+  assert.match(home, /href="\/login"/);
+});
