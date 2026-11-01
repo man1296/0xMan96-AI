@@ -178,3 +178,34 @@ test("Postgres enforces the active Workflow schedule quota under a transaction l
   assert.match(scheduleQuotaMigration, /before insert or update of trigger_type, enabled/i);
   assert.match(workflowApi, /active_workflow_schedule_limit_reached/);
 });
+
+
+const semanticMigration = fs.readFileSync("supabase/migrations/20261102093000_agent_memory_semantic_search.sql", "utf8");
+const embeddings = fs.readFileSync("lib/agent/embeddings.ts", "utf8");
+const memoryApi = fs.readFileSync("app/api/v1/agent/memories/route.ts", "utf8");
+const wrangler = fs.readFileSync("wrangler.jsonc", "utf8");
+
+test("Agent Memory uses multilingual pgvector embeddings with owner-scoped semantic retrieval", () => {
+  assert.match(semanticMigration, /create extension if not exists vector with schema extensions/i);
+  assert.match(semanticMigration, /embedding extensions\.vector\(1024\)/);
+  assert.match(semanticMigration, /using hnsw \(embedding extensions\.vector_cosine_ops\)/i);
+  assert.match(semanticMigration, /private\.match_agent_memories/);
+  assert.match(semanticMigration, /m\.workspace_id = p_workspace_id/);
+  assert.match(semanticMigration, /m\.user_id = p_user_id/);
+  assert.match(semanticMigration, /security invoker/i);
+  assert.match(semanticMigration, /grant execute on function private\.match_agent_memories/);
+  assert.match(embeddings, /@cf\/baai\/bge-m3/);
+  assert.match(embeddings, /findRelevantMemories/);
+  assert.match(worker, /findRelevantMemories\(supabase/);
+  assert.match(worker, /generateMemoryEmbedding/);
+  assert.match(memoryApi, /generateMemoryEmbedding/);
+  assert.match(wrangler, /"ai": \{ "binding": "AI" \}/);
+});
+
+test("read-only web research is bounded and its results are cited by the Agent", () => {
+  assert.match(workflow, /"web\.search"/);
+  assert.match(workflow, /invalid_web_search_result_limit/);
+  assert.match(worker, /searchWeb\(String\(step\.input\.query\)/);
+  assert.match(worker, /cite only their source IDs/);
+  assert.match(worker, /Never invent external tools or fetch arbitrary URLs/);
+});
