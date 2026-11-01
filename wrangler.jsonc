@@ -9,9 +9,6 @@
     "global_fetch_strictly_public"
   ],
   "keep_vars": true,
-  "secrets": {
-    "required": ["OPENROUTER_API_KEY"]
-  },
   "workers_dev": true,
   "assets": {
     "directory": ".open-next/assets",
