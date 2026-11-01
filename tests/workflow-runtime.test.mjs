@@ -238,5 +238,6 @@ test("web research page retrieval is bounded, HTTPS-only, and redirect-validated
   assert.match(researchModule, /readLimitedText\(response, 600_000\)/);
   assert.match(researchModule, /AbortSignal\.timeout\(8000\)/);
   assert.match(researchModule, /redirect: "manual"/);
-  assert.match(researchModule, /private\\/local destinations/);
+  assert.match(researchModule, /hostname === "localhost"/);
+  assert.match(researchModule, /hostname\.endsWith\("\.local"\)/);
 });
