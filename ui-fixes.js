@@ -108,6 +108,7 @@ function restoreBuiltins(){
 }
 document.addEventListener("DOMContentLoaded",()=>{
   restoreBuiltins();
+  $("runAgentBtn").onclick=window.runAgent;
   const menu=$("mobileMenu"),sidebar=$("sidebar");
   if(menu&&sidebar){
     menu.setAttribute("aria-label","Open navigation menu");
