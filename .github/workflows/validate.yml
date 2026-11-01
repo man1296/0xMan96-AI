@@ -2,7 +2,7 @@ name: Validate 0xMan96 AI platform
 
 on:
   push:
-    branches: ["main", "feat/supabase-production-backend"]
+    branches: ["main", "feat/supabase-production-backend", "feat/durable-agent-runtime"]
   pull_request:
     branches: ["main"]
 
