@@ -5,6 +5,8 @@ import type { CSSProperties, FormEvent } from "react";
 
 type Agent = { id: string; name: string; description?: string; instructions?: string };
 type Workflow = { id: string; name: string; description?: string; steps: Array<{ name: string; tool: string; input: Record<string, unknown>; requiresApproval: boolean }> };
+type WorkflowRun = { id: string; workflow_id: string | null; agent_task_id: string | null; status: string; created_at: string; started_at?: string | null; completed_at?: string | null };
+type WorkflowStepRun = { id: string; run_id: string; step_index: number; name: string; status: string; requires_approval: boolean; input: Record<string, unknown>; output?: Record<string, unknown> | null; error_code?: string | null };
 type AgentTask = {
   id: string;
   task: string;
@@ -59,6 +61,8 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
   const [tasks, setTasks] = useState<AgentTask[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [workflowRuns, setWorkflowRuns] = useState<WorkflowRun[]>([]);
+  const [workflowStepRuns, setWorkflowStepRuns] = useState<WorkflowStepRun[]>([]);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
   const [workflowName, setWorkflowName] = useState("");
   const [workflowStepsText, setWorkflowStepsText] = useState("Research the task and identify reliable sources.\nSynthesize the findings into a clear final answer.");
@@ -80,6 +84,13 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
     const response = await fetch("/api/v1/agent/tasks?workspaceId=" + encodeURIComponent(workspaceId), { cache: "no-store" });
     const data = await readJson<{ tasks: AgentTask[] }>(response);
     setTasks(data.tasks ?? []);
+  }, [workspaceId]);
+
+  const loadWorkflowRuns = useCallback(async () => {
+    const response = await fetch("/api/v1/workflows/runs?workspaceId=" + encodeURIComponent(workspaceId), { cache: "no-store" });
+    const data = await readJson<{ runs: WorkflowRun[]; steps: WorkflowStepRun[] }>(response);
+    setWorkflowRuns(data.runs ?? []);
+    setWorkflowStepRuns(data.steps ?? []);
   }, [workspaceId]);
 
   const loadWorkflows = useCallback(async () => {
@@ -121,7 +132,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
       setLoading(true);
       setError("");
       try {
-        await Promise.all([loadAgents(), loadTasks(), loadMemories(), loadWorkflows()]);
+        await Promise.all([loadAgents(), loadTasks(), loadMemories(), loadWorkflows(), loadWorkflowRuns()]);
       } catch (err) {
         if (alive) setError(err instanceof Error ? err.message : "workspace_load_failed");
       } finally {
@@ -130,15 +141,16 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
     }
     void initialize();
     return () => { alive = false; };
-  }, [loadAgents, loadTasks, loadMemories, loadWorkflows]);
+  }, [loadAgents, loadTasks, loadMemories, loadWorkflows, loadWorkflowRuns]);
 
   useEffect(() => {
     if (!activeTasks) return;
     const timer = window.setInterval(() => {
       void loadTasks().catch(() => undefined);
+      void loadWorkflowRuns().catch(() => undefined);
     }, 5000);
     return () => window.clearInterval(timer);
-  }, [activeTasks, loadTasks]);
+  }, [activeTasks, loadTasks, loadWorkflowRuns]);
 
   async function submitTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -403,23 +415,26 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
           {tab === "runs" && (
             <section style={panel}>
               <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>Workflow execution history</h2>
-              <p style={{ ...muted, margin: "0 0 16px", fontSize: 13 }}>Each Agent task is linked to a durable Workflow run record.</p>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
-                  <thead><tr style={{ color: "#9a9db0" }}><th style={{ padding: 10 }}>Task</th><th style={{ padding: 10 }}>Status</th><th style={{ padding: 10 }}>Attempts</th><th style={{ padding: 10 }}>Created</th></tr></thead>
-                  <tbody>
-                    {tasks.map(task => <tr key={task.id} style={{ borderTop: "1px solid #2c3041" }}>
-                      <td style={{ padding: 10, minWidth: 220 }}>{task.task}</td>
-                      <td style={{ padding: 10 }}>{task.status.replaceAll("_", " ")}</td>
-                      <td style={{ padding: 10 }}>{task.attempts ?? 0}</td>
-                      <td style={{ padding: 10, whiteSpace: "nowrap" }}>{task.created_at ? new Date(task.created_at).toLocaleString() : "—"}</td>
-                    </tr>)}
-                    {!tasks.length && <tr><td colSpan={4} style={{ padding: 14, ...muted }}>No workflow runs yet.</td></tr>}
-                  </tbody>
-                </table>
+              <p style={{ ...muted, margin: "0 0 16px", fontSize: 13 }}>Durable run and step records from Supabase, refreshed while tasks are active.</p>
+              <div style={{ display: "grid", gap: 12 }}>
+                {!workflowRuns.length && <p style={muted}>No workflow runs yet.</p>}
+                {workflowRuns.map(run => <article key={run.id} style={{ background: "#0c0e16", border: "1px solid #2c3041", borderRadius: 12, padding: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                    <strong style={{ fontSize: 13 }}>Run {run.id.slice(0, 8)}</strong>
+                    <span style={{ color: run.status === "succeeded" ? "#86ddb5" : run.status === "failed" || run.status === "cancelled" ? "#ff9e9e" : "#d8c4ff", fontSize: 11, textTransform: "uppercase" }}>{run.status.replaceAll("_", " ")}</span>
+                  </div>
+                  <p style={{ ...muted, fontSize: 11 }}>Created {new Date(run.created_at).toLocaleString()} · Task {run.agent_task_id?.slice(0, 8) ?? "—"}</p>
+                  <ol style={{ display: "grid", gap: 8, paddingLeft: 20, marginBottom: 0 }}>
+                    {workflowStepRuns.filter(step => step.run_id === run.id).map(step => <li key={step.id} style={{ paddingLeft: 4 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}><strong style={{ fontSize: 12 }}>{step.name}</strong><span style={{ ...muted, fontSize: 11 }}>{step.status.replaceAll("_", " ")}{step.requires_approval ? " · approval-gated" : ""}</span></div>
+                      {step.error_code && <p style={{ color: "#ffaaaa", fontSize: 11 }}>{step.error_code}</p>}
+                      {step.output && <p style={{ color: "#c7c4d5", fontSize: 12, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{String(step.output.result ?? JSON.stringify(step.output))}</p>}
+                    </li>)}
+                  </ol>
+                </article>)}
               </div>
             </section>
-          )}
+          )}}
         </>
       )}
       <footer style={{ ...muted, marginTop: 22, fontSize: 11, lineHeight: 1.6 }}>
