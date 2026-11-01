@@ -9,12 +9,17 @@
 ## Trust boundaries
 - Browser receives only the Supabase project URL and anon/publishable key.
 - Supabase RLS is mandatory for all user-facing tables and Storage objects.
-- Service-role keys and AI gateway credentials are server-only. They must never use a NEXT_PUBLIC_ prefix or be committed.
+- Service-role keys and OpenRouter API credentials are server-only. They must never use a NEXT_PUBLIC_ prefix or be committed.
 - All API routes authenticate with supabase.auth.getUser(), validate input, apply database-backed rate limits and return generic errors.
 - User-provided documents and model output are untrusted data. Never execute embedded instructions or generated code automatically.
 
 ## AI gateway
-The chat route implements an OpenAI-compatible streaming proxy. Configure an HTTPS base URL, API key and default model in Vercel environment variables only after choosing and testing a provider. No provider secret is committed. Puter.js remains available in the legacy client while migration and billing behavior are evaluated.
+- OpenRouter is the provider-neutral gateway. The server calls https://openrouter.ai/api/v1/chat/completions and streams Server-Sent Events to the authenticated client.
+- Default quality model: anthropic/claude-opus-5. Quality fallback candidates: qwen/qwen3.8-max and meta/muse-spark-1.2. Model availability, pricing and provider routing can change; verify against OpenRouter's live model catalogue before release.
+- The default model and fallback list are server-side configuration. Client-selected model IDs are validated syntactically and still pass through the authenticated, rate-limited server proxy.
+- Set OPENROUTER_API_KEY only in server environment variables. It must never be committed or exposed through NEXT_PUBLIC_.
+- Streaming usage metadata is requested for future cost metering. Persist per-generation model, provider generation ID and token usage before exposing usage analytics.
+- Quality-first defaults can be expensive. Add user-visible spend estimates, hard per-user budgets and admin kill switches before enabling broad public access.
 
 ## Data model
 Profiles, workspaces, memberships, conversations, messages, knowledge document metadata, creator projects, generation jobs, audit events and rate-limit counters are tenant-scoped. Workspace membership and user ownership are enforced by RLS.
