@@ -3,6 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 
+function renderAgentContent(content: string) {
+  return content.split(/(https?:\\/\\/[^\\s<>"')]+)/g).map((part, index) => {
+    if (!/^https?:\\/\\//i.test(part)) return part;
+    const url = part.replace(/[.,;:!?]+$/, "");
+    const trailing = part.slice(url.length);
+    return <span key={index}><a href={url} target="_blank" rel="noopener noreferrer" style={{ color: "#bba6ff", textDecoration: "underline", overflowWrap: "anywhere" }}>{url}</a>{trailing}</span>;
+  });
+}
+
 type Agent = { id: string; name: string; description?: string; instructions?: string };
 type Workflow = { id: string; name: string; description?: string; trigger_type?: string; trigger_config?: { interval?: string }; enabled?: boolean; next_run_at?: string | null; last_triggered_at?: string | null; steps: Array<{ name: string; tool: string; input: Record<string, unknown>; requiresApproval: boolean }> };
 type WorkflowRun = { id: string; workflow_id: string | null; agent_task_id: string | null; status: string; created_at: string; started_at?: string | null; completed_at?: string | null };
@@ -329,7 +338,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
                       {task.results?.map((result, index) => result.content ? (
                         <div key={index} style={{ borderTop: "1px solid #2c3041", paddingTop: 12, color: "#d5d2e2", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>
                           <strong style={{ display: "block", color: "#b49aff", fontSize: 12, marginBottom: 6 }}>AGENT</strong>
-                          {result.content}
+                          {renderAgentContent(result.content)}
                         </div>
                       ) : null)}
                       {task.status === "awaiting_approval" && <div style={{ marginTop: 12, padding: 12, borderRadius: 10, border: "1px solid #8b6a35", background: "#2a2115" }}><strong style={{ color: "#f4cf8b", fontSize: 12 }}>Approval required</strong><p style={{ color: "#dfd0b4", fontSize: 12, lineHeight: 1.5, whiteSpace: "pre-wrap", maxHeight: 260, overflowY: "auto" }}>{task.approval?.summary || "This workflow step needs your approval before it can continue."}</p><div style={{ display: "flex", gap: 8 }}><button type="button" onClick={() => void decideApproval(task.id, true)} style={{ ...button, background: "#a98bf4", color: "#171320", fontWeight: 700 }}>Approve & resume</button><button type="button" onClick={() => void decideApproval(task.id, false)} style={button}>Reject</button></div></div>}
