@@ -34,6 +34,31 @@ export async function generateMemoryEmbedding(content: string): Promise<number[]
   }
 }
 
+
+async function backfillMissingMemoryEmbeddings(
+  supabase: any,
+  args: { workspaceId: string; userId: string },
+  limit = 2
+): Promise<void> {
+  const { data, error } = await supabase.from("agent_memories")
+    .select("id,content")
+    .eq("workspace_id", args.workspaceId)
+    .eq("user_id", args.userId)
+    .is("embedding", null)
+    .order("created_at", { ascending: true })
+    .limit(Math.max(1, Math.min(limit, 3)));
+  if (error || !Array.isArray(data)) return;
+  for (const row of data) {
+    const embedding = await generateMemoryEmbedding(String(row.content ?? ""));
+    if (!embedding) break;
+    await supabase.from("agent_memories").update({
+      embedding,
+      embedding_model: MEMORY_EMBEDDING_MODEL,
+      embedded_at: new Date().toISOString()
+    }).eq("id", row.id).eq("workspace_id", args.workspaceId).eq("user_id", args.userId).is("embedding", null);
+  }
+}
+
 type MemorySearchArgs = {
   workspaceId: string;
   userId: string;
@@ -48,6 +73,7 @@ export async function findRelevantMemories(supabase: any, args: MemorySearchArgs
   const embedding = await generateMemoryEmbedding(query);
 
   if (embedding) {
+    await backfillMissingMemoryEmbeddings(supabase, args, 2);
     const { data, error } = await supabase.rpc("match_agent_memories", {
       p_workspace_id: args.workspaceId,
       p_user_id: args.userId,
