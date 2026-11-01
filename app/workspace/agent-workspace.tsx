@@ -429,7 +429,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
                     {workflowStepRuns.filter(step => step.run_id === run.id).map(step => <li key={step.id} style={{ paddingLeft: 4 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}><strong style={{ fontSize: 12 }}>{step.name}</strong><span style={{ ...muted, fontSize: 11 }}>{step.status.replaceAll("_", " ")}{step.requires_approval ? " · approval-gated" : ""}</span></div>
                       {step.error_code && <p style={{ color: "#ffaaaa", fontSize: 11 }}>{step.error_code}</p>}
-                      {step.output && <p style={{ color: "#c7c4d5", fontSize: 12, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{String(step.output.result ?? JSON.stringify(step.output))}</p>}
+                      {step.output && <pre style={{ color: "#c7c4d5", fontSize: 12, whiteSpace: "pre-wrap", lineHeight: 1.5, fontFamily: "inherit" }}>{typeof step.output.result === "string" ? step.output.result : JSON.stringify(step.output.result ?? step.output, null, 2)}</pre>}
                     </li>)}
                   </ol>
                 </article>)}
