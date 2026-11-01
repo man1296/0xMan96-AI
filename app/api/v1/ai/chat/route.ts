@@ -7,10 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const OPENROUTER_DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
-const QUALITY_FALLBACK_MODELS = [
-  "qwen/qwen3.8-max",
-  "meta/muse-spark-1.2"
-];
+const FREE_DEFAULT_MODEL = "openrouter/free";
 
 export async function POST(request: Request) {
   try {
@@ -36,7 +33,7 @@ export async function POST(request: Request) {
     if (!allowed) return NextResponse.json({ error: "rate_limited", retryAfterSeconds: 60 }, { status: 429, headers: { "Retry-After": "60" } });
 
     const apiKey = process.env.OPENROUTER_API_KEY;
-    const defaultModel = process.env.OPENROUTER_DEFAULT_MODEL || "anthropic/claude-opus-5";
+    const defaultModel = process.env.OPENROUTER_DEFAULT_MODEL || FREE_DEFAULT_MODEL;
     const base = process.env.OPENROUTER_BASE_URL || OPENROUTER_DEFAULT_BASE_URL;
     if (!apiKey) return NextResponse.json({ error: "ai_provider_not_configured" }, { status: 503 });
 
@@ -46,7 +43,6 @@ export async function POST(request: Request) {
     }
 
     const selectedModel = parsed.data.model || defaultModel;
-    const fallbackModels = selectedModel === defaultModel ? QUALITY_FALLBACK_MODELS : [];
     const upstream = await fetch(new URL("chat/completions", gateway.toString().replace(/\/$/, "") + "/"), {
       method: "POST",
       headers: {
@@ -58,7 +54,6 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: selectedModel,
-        ...(fallbackModels.length ? { models: fallbackModels } : {}),
         messages: parsed.data.messages,
         stream: true,
         stream_options: { include_usage: true }
