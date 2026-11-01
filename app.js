@@ -47,11 +47,11 @@ function fmt(source){
 }
 function current(){return state.chats.find(c=>c.id===activeChat)}
 function newChat(){const c={id:uid(),title:"New conversation",messages:[],created:Date.now()};state.chats.unshift(c);activeChat=c.id;save();renderChat();showView("chat")}
-function renderHistory(){$("historyList").innerHTML=state.chats.slice(0,25).map(c=>`<button class="history-item ${c.id===activeChat?"selected":""}" data-chat="${c.id}">${esc(c.title)}</button>`).join("");document.querySelectorAll("[data-chat]").forEach(b=>b.onclick=()=>{activeChat=b.dataset.chat;renderChat()});$("chatCount").textContent=state.chats.length;$("agentCount").textContent=state.agents.length}
+function renderHistory(){$("historyList").innerHTML=state.chats.slice(0,25).map(c=>'<div class="history-row"><button class="history-item '+(c.id===activeChat?"selected":"")+'" data-chat="'+esc(c.id)+'" title="'+esc(c.title)+'">'+esc(c.title)+'</button><button class="history-menu" type="button" data-delete-chat="'+esc(c.id)+'" aria-label="Delete conversation" title="Delete conversation">⋯</button></div>').join("");document.querySelectorAll("[data-chat]").forEach(b=>b.onclick=()=>{activeChat=b.dataset.chat;renderChat()});document.querySelectorAll("[data-delete-chat]").forEach(b=>b.onclick=()=>{const id=b.dataset.deleteChat;const chat=state.chats.find(x=>x.id===id);if(!chat)return;if(!confirm('Delete conversation "'+(chat.title||"Untitled")+'"? This cannot be undone.'))return;state.chats=state.chats.filter(x=>x.id!==id);if(activeChat===id)activeChat=state.chats[0]?.id||null;save();renderChat();toast("Conversation deleted.")});$("chatCount").textContent=state.chats.length;$("agentCount").textContent=state.agents.length}
 function renderChat(){renderHistory();const c=current();$("welcome").classList.toggle("hidden",!!(c&&c.messages.length));$("messages").innerHTML=c?c.messages.map(m=>`<div class="message ${m.role}"><div class="msg-avatar">${m.role==="user"?"Y":"✳"}</div><div class="msg-body"><div class="msg-meta">${m.role==="user"?"YOU":"0xMan96 AI"} · ${new Date(m.time).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</div><div class="msg-content">${fmt(m.content)}</div></div></div>`).join(""):"";$("messages").scrollTop=$("messages").scrollHeight}
 function showView(v){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));$(v+"View").classList.add("active");document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===v));$("pageTitle").textContent=({chat:"Chat",agents:"Agents",tools:"Tool hub",documents:"Documents",image:"Image studio",creator:"Creator studio",automation:"Automations"})[v]||v;$("sidebar").classList.remove("open")}
 function setBusy(v){busy=v;$("sendBtn").disabled=v;$("sendBtn").textContent=v?"…":"↑";$("promptInput").disabled=v}
-const docsContext=()=>documents.map(d=>`\n\n[FILE: ${d.name}]\nType: ${d.type||"unknown"} | Kind: ${d.kind||"text"} | Size: ${d.size} bytes\n${d.note||""}\n${(d.text||"").slice(0,18000)}`).join("").slice(0,42000);
+const docsContext=()=>{let remaining=220000;return documents.map(d=>{const header="\\n\\n[FILE: "+d.name+"]\\nType: "+(d.type||"unknown")+" | Kind: "+(d.kind||"text")+" | Size: "+d.size+" bytes | Extracted: "+(d.text||"").length+" chars\\n"+(d.note||"")+"\\n";const body=(d.text||"").slice(0,Math.max(0,remaining-header.length));remaining-=header.length+body.length;return header+body+(body.length<(d.text||"").length?"\\n[TRUNCATED: context budget reached]":"")}).join("")};
 async function netJSON(url){if(!window.puter?.net?.fetch)throw Error("Puter networking unavailable. Sign in to Puter first.");const r=await puter.net.fetch(url);if(!r.ok)throw Error(`HTTP ${r.status} for ${url}`);return r.json()}
 async function toolWebSearch({query}) {
  if(!window.puter?.net?.fetch)throw Error("Puter networking unavailable. Sign in to Puter first.");
@@ -137,11 +137,11 @@ function systemFor(agent){return `${agent?.instructions||"You are 0xMan96 AI, a 
 async function runWithTools(messages,agent,onText=()=>{}){
  let msgs=[{role:"system",content:systemFor(agent)},...messages];
  for(let turn=0;turn<5;turn++){
-  const stream=await puter.ai.chat(msgs,{model:state.model||undefined,tools:TOOL_DEFS,parallelToolCalls:true,stream:true});
+  const stream=await puter.ai.chat(msgs,{model:state.model||undefined,tools:TOOL_DEFS,parallelToolCalls:true,stream:true,normalize:true});
   let text="",toolCalls=[];
   for await(const part of stream){
    if(part?.type==="text"&&part.text){text+=part.text;onText(text)}
-   else if(part?.type==="tool_use"){toolCalls.push(part)}
+   else if(part?.type==="tool_use"){toolCalls.push(part);onText((text?text+"\\n\\n":"")+"[Using tool: "+part.name+"…]")}
    else if(part?.type==="error")throw Error(part.message||"AI stream failed");
   }
   if(!toolCalls.length)return text||"The model returned an empty response.";
@@ -165,7 +165,7 @@ async function sendMessage(text){
  c.messages.push({role:"user",content:text+attachmentNote,time:Date.now()});
  if(c.messages.length===1)c.title=text.slice(0,42);save();renderChat();$("promptInput").value="";setBusy(true);
  const a={role:"assistant",content:"",time:Date.now()};c.messages.push(a);renderChat();
- const update=content=>{a.content=content||"Working with available tools…";const el=$("messages").querySelector(".message:last-child .msg-content");if(el)el.innerHTML=fmt(a.content);$("messages").scrollTop=$("messages").scrollHeight};
+ const update=content=>{a.content=content||"Working with available tools…";const el=$("messages").querySelector(".message:last-child .msg-content");if(el){el.innerHTML=fmt(a.content);el.dataset.streamUpdated="true"}$("messages").scrollTop=$("messages").scrollHeight};
  try{
   const agent=state.agents.find(x=>x.id===$("agentSelect").value);
   let messages=c.messages.slice(0,-1).map(m=>({role:m.role,content:m.content}));
@@ -213,7 +213,7 @@ async function extractFile(file){
    if(text.includes("\\u0000")){text="";kind="binary";note="Binary file. Contents are not text-extracted."}
   }else{kind="binary";note="Binary file. File metadata is available, but content requires a dedicated parser or multimodal tool."}
  }
- return {id:uid(),name:base,size:file.size,type:file.type||"unknown",kind,note,text:text.slice(0,45000)};
+ return {id:uid(),name:base,size:file.size,type:file.type||"unknown",kind,note,text:text.slice(0,100000)};
 }
 async function addFiles(files){for(const f of files){try{const doc=await extractFile(f);documents.push(doc);toast("Attached "+f.name+(doc.kind==="binary"?" (metadata only, no content sent)":" · text ready for AI"))}catch(e){toast(f.name+": "+e.message)}}renderDocuments();renderChatAttachments();$("quickFile").value="";$("documentUpload").value=""}
 function renderChatAttachments(){const el=$("chatAttachments");if(!el)return;el.innerHTML=documents.map(d=>'<span class="chat-attachment" title="'+esc(d.note||d.name)+'"><b>'+esc(d.name)+'</b><small>'+(d.kind==="binary"?"metadata only":d.text.length.toLocaleString()+" chars")+'</small><button type="button" data-chat-doc="'+esc(d.id)+'" aria-label="Remove '+esc(d.name)+'">×</button></span>').join("");el.classList.toggle("hidden",!documents.length);el.querySelectorAll("[data-chat-doc]").forEach(b=>b.onclick=()=>{documents=documents.filter(d=>d.id!==b.dataset.chatDoc);renderDocuments();renderChatAttachments()})}
