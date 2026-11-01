@@ -16,7 +16,7 @@ export async function GET(request:Request){
  if(error||!user)return NextResponse.json({error:"unauthorized"},{status:401});
  const url=new URL(request.url), workspaceId=url.searchParams.get("workspaceId");
  if(!workspaceId||!z.string().uuid().safeParse(workspaceId).success)return NextResponse.json({error:"invalid_workspace_id"},{status:400});
- const {data,error:queryError}=await supabase.from("agent_tasks").select("id,workspace_id,agent_id,workflow_id,status,task,plan,results,attempts,run_at,started_at,completed_at,created_at,updated_at").eq("workspace_id",workspaceId).order("created_at",{ascending:false}).limit(50);
+ const {data,error:queryError}=await supabase.from("agent_tasks").select("id,workspace_id,agent_id,workflow_id,status,task,plan,results,attempts,max_attempts,last_error,run_at,lease_expires_at,started_at,completed_at,created_at,updated_at").eq("workspace_id",workspaceId).order("created_at",{ascending:false}).limit(50);
  if(queryError)return NextResponse.json({error:"task_query_failed"},{status:400});
  return NextResponse.json({tasks:data});
 }
