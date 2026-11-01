@@ -1,27 +1,29 @@
-name: Validate static workspace
+name: Validate 0xMan96 AI platform
 
 on:
   push:
-    branches: ["main", "feat/workspace-hardening-roadmap"]
+    branches: ["main", "feat/supabase-production-backend"]
   pull_request:
     branches: ["main"]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  syntax:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check JavaScript syntax
-        run: |
-          node --check app.js
-          node --check enhancements.js
-      - name: Verify required entry points
-        run: |
-          test -s index.html
-          test -s style.css
-          test -s app.js
-          test -s enhancements.js
-          grep -q 'enhancements.js' index.html
+      - run: npm install --no-audit --no-fund
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npx opennextjs-cloudflare build

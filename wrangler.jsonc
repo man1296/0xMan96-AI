@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "0xman96-ai",
+  "main": "./custom-worker.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "nodejs_compat_populate_process_env",
+    "global_fetch_strictly_public"
+  ],
+  "keep_vars": true,
+  "workers_dev": true,
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://ndrovsdafoanpaqlnmlx.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_An0t8f25gPXOonIEHB8Nbw_cdc9VMJm",
+    "NEXT_PUBLIC_APP_URL": "https://man1296.github.io/0xMan96-AI/",
+    "OPENROUTER_BASE_URL": "https://openrouter.ai/api/v1",
+    "OPENROUTER_DEFAULT_MODEL": "openrouter/free",
+    "BINDING_DIAGNOSTIC": "binding-check-2026-11"
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "0xman96-ai"
+    }
+  ]
+}
