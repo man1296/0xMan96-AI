@@ -166,3 +166,15 @@ test("scheduled Workflows do not overlap and active schedules are capped", () =>
   assert.match(workflowApi, /active_workflow_schedule_limit_reached/);
   assert.match(workflowApi, /\(count \?\? 0\) >= 5/);
 });
+
+
+const scheduleQuotaMigration = fs.readFileSync("supabase/migrations/20261101220953_workflow_schedule_db_quota_guard.sql", "utf8");
+
+test("Postgres enforces the active Workflow schedule quota under a transaction lock", () => {
+  assert.match(scheduleQuotaMigration, /security definer/i);
+  assert.match(scheduleQuotaMigration, /auth\.uid\(\)/);
+  assert.match(scheduleQuotaMigration, /pg_advisory_xact_lock/);
+  assert.match(scheduleQuotaMigration, /v_active >= 5/);
+  assert.match(scheduleQuotaMigration, /before insert or update of trigger_type, enabled/i);
+  assert.match(workflowApi, /active_workflow_schedule_limit_reached/);
+});
