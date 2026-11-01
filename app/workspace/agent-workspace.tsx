@@ -186,6 +186,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
     event.preventDefault();
     const lines = workflowStepsText.split("\n").map(line => line.trim()).filter(Boolean);
     if (!workflowName.trim() || !lines.length || savingWorkflow) return;
+    if (lines.length > 6) { setError("A Workflow can contain at most six steps."); return; }
     setSavingWorkflow(true);
     setError("");
     try {
@@ -197,7 +198,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
           agentId: agents[0]?.id,
           name: workflowName.trim(),
           description: "User-defined sequential Agent workflow.",
-          steps: lines.slice(0, 6).map((prompt, index) => ({
+          steps: lines.map((prompt, index) => ({
             id: "step-" + (index + 1),
             name: "Step " + (index + 1),
             tool: "agent.reason",
