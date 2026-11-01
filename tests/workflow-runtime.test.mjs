@@ -82,3 +82,13 @@ test("public rate limit RPC is SECURITY INVOKER", () => {
   assert.match(migration, /create or replace function public\.consume_api_rate_limit[\s\S]*?security invoker/i);
   assert.match(migration, /create or replace function private\.consume_api_rate_limit[\s\S]*?security definer/i);
 });
+
+test("manual production deployment is guarded and checks out main only", () => {
+  const deploy = fs.readFileSync(".github/workflows/deploy-cloudflare.yml", "utf8");
+  assert.match(deploy, /workflow_dispatch/);
+  assert.match(deploy, /confirm_production == 'deploy'/);
+  assert.match(deploy, /ref: main/);
+  assert.match(deploy, /CLOUDFLARE_API_TOKEN/);
+  assert.match(deploy, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(deploy, /AGENT_WORKER_SECRET/);
+});
