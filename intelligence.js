@@ -4,7 +4,7 @@
 (()=>{"use strict";
 const KEY="0xman96-learning-v1",MAX=500;
 const STOP=new Set("yang dan atau dengan untuk dari pada ini itu the and or with for from this that into your about task agent please bantu to dalam saya kamu adalah".split(" "));
-const tokenize=s=>(String(s||"").toLowerCase().match(/[\\p{L}\\p{N}]{2,}/gu)||[]).filter(t=>!STOP.has(t)).slice(0,120);
+const tokenize=s=>(String(s||"").toLowerCase().match(/[\p{L}\p{N}]{2,}/gu)||[]).filter(t=>!STOP.has(t)).slice(0,120);
 const read=()=>{try{const x=JSON.parse(localStorage.getItem(KEY)||"{}");return {samples:Array.isArray(x.samples)?x.samples.slice(-MAX):[]}}catch{return {samples:[]}}};
 const write=x=>{try{localStorage.setItem(KEY,JSON.stringify(x))}catch{}};
 function learn(text,role,rating=1){if(!role||!String(text||"").trim())return false;const db=read();db.samples.push({tokens:tokenize(text),role:String(role).slice(0,80),rating:rating<0?-1:1,at:Date.now()});db.samples=db.samples.slice(-MAX);write(db);return true}
