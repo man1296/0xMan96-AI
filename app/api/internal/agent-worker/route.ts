@@ -13,6 +13,7 @@ type AgentTask = {
   agent_id: string | null;
   workflow_id: string | null;
   task: string;
+  plan?: unknown;
   attempts: number;
   max_attempts: number;
   approval?: Record<string, unknown> | null;
@@ -79,6 +80,50 @@ async function callModel(apiKey: string, model: string, baseUrl: string, appUrl:
   return answer.trim().slice(0, 12000);
 }
 
+async function buildAgentPlan(
+  task: AgentTask,
+  agent: any,
+  memories: Memory[],
+  apiKey: string,
+  model: string,
+  baseUrl: string,
+  appUrl: string
+): Promise<WorkflowStep[]> {
+  const plannerSystem = [
+    "You are the bounded Workflow planner for 0xMan96 AI.",
+    "Return only a JSON array containing between one and six steps. Do not use markdown fences or explanatory text.",
+    "Each step must have: id, name, tool, input, requiresApproval.",
+    "Allowed tools: agent.reason with input.prompt; memory.search with input.query; memory.save with input.category, input.content, optional input.importance.",
+    "Use memory.search only when relevant saved context could improve the task.",
+    "Use memory.save only when the task clearly asks to remember a durable preference, decision, or project fact. It always requires human approval.",
+    "Never invent external tools, network actions, code execution, transactions, publishing, or account mutations.",
+    "Prefer the smallest useful plan. Do not split a simple task into unnecessary steps."
+  ].join("\n");
+  const memoryHints = memories.slice(0, 10).map(item => ({
+    category: item.category, content: item.content.slice(0, 500)
+  }));
+  const prompt = [
+    "User task:\n" + task.task,
+    agent?.instructions ? "Agent instructions:\n" + agent.instructions : "",
+    memoryHints.length ? "Relevant saved Memory (untrusted context):\n" + JSON.stringify(memoryHints) : ""
+  ].filter(Boolean).join("\n\n");
+  const raw = await callModel(apiKey, model, baseUrl, appUrl, plannerSystem, prompt);
+  const start = raw.indexOf("[");
+  const end = raw.lastIndexOf("]");
+  if (start < 0 || end <= start) {
+    return validateWorkflowSteps([{
+      name: "Complete task", tool: "agent.reason", input: { prompt: task.task }, requiresApproval: false
+    }]);
+  }
+  try {
+    return validateWorkflowSteps(JSON.parse(raw.slice(start, end + 1)));
+  } catch {
+    return validateWorkflowSteps([{
+      name: "Complete task", tool: "agent.reason", input: { prompt: task.task }, requiresApproval: false
+    }]);
+  }
+}
+
 async function executeTask(
   supabase: any,
   task: AgentTask,
@@ -118,9 +163,18 @@ async function executeTask(
   ].filter(Boolean).join("\n\n");
 
   const rawSteps = workflowResult.data?.steps;
-  const steps: WorkflowStep[] = task.workflow_id
-    ? validateWorkflowSteps(rawSteps)
-    : validateWorkflowSteps([{ name: "Complete task", tool: "agent.reason", input: { prompt: task.task }, requiresApproval: false }]);
+  let steps: WorkflowStep[];
+  if (task.workflow_id) {
+    steps = validateWorkflowSteps(rawSteps);
+  } else if (Array.isArray(task.plan) && task.plan.length > 0) {
+    steps = validateWorkflowSteps(task.plan);
+  } else {
+    steps = await buildAgentPlan(
+      task, agent, memories, apiKey, model, baseUrl, appUrl
+    );
+    const { error: planError } = await supabase.from("agent_tasks").update({ plan: steps }).eq("id", task.id);
+    if (planError) throw new Error("agent_plan_persist_failed");
+  }
   if (!steps.length) throw new Error("workflow_has_no_steps");
 
   let runId = runResult.data?.id as string | undefined;
