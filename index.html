@@ -20,15 +20,18 @@
         <div><b>0xMan96</b><small>AI WORKSPACE</small></div>
       </div>
       <button class="new-chat" id="newChat"><span>＋</span> New chat <kbd>⌘ K</kbd></button>
-      <div class="side-label">WORKSPACE</div>
+      <div class="side-label">CHAT</div>
       <button class="nav-item active" data-view="chat"><span class="nav-icon">◉</span> Chat <span class="nav-count" id="chatCount">0</span></button>
-      <button class="nav-item" data-view="agents"><span class="nav-icon">✳</span> Agents <span class="nav-count" id="agentCount">0</span></button>
+      <div class="side-label">AGENT</div>
+      <button class="nav-item" data-view="workflow"><span class="nav-icon">⌘</span> Workflow</button>
+      <button class="nav-item" data-view="workspace"><span class="nav-icon">✳</span> Workspace <span class="nav-count" id="agentCount">0</span></button>
+      <button class="nav-item" data-view="memory"><span class="nav-icon">◈</span> Memory <span class="nav-count" id="memoryCount">0</span></button>
       <div class="side-label">TOOLS</div>
       <button class="nav-item" data-view="tools"><span class="nav-icon">⌘</span> Tool hub</button>
       <button class="nav-item" data-view="documents"><span class="nav-icon">▤</span> Documents</button>
       <button class="nav-item" data-view="image"><span class="nav-icon">▧</span> Image studio</button>
       <button class="nav-item" data-view="creator"><span class="nav-icon">✦</span> Creator studio</button>
-      <button class="nav-item" data-view="automation"><span class="nav-icon">◷</span> Automations</button>
+      <button class="nav-item" data-view="workflow"><span class="nav-icon">◷</span> Workflow</button>
       <div class="side-label history-label">RECENT CHATS</div>
       <div id="historyList" class="history-list"></div>
       <div class="sidebar-bottom">
@@ -101,6 +104,7 @@
           <div class="agent-grid" id="agentGrid"></div>
         </div>
       </section>
+      <section class="view" id="memoryView"><div class="utility-page"><div class="eyebrow">AGENT KNOWLEDGE & CONTEXT</div><h1>Memory <em>library.</em></h1><p class="muted">Simpan fakta, preferensi, keputusan, dan temuan proyek yang boleh digunakan kembali oleh Agent. Memory tersimpan lokal di browser ini.</p><div class="upload-card memory-form"><label>Memory title<input id="memoryTitle" maxlength="100" placeholder="Contoh: Strategi konten brand"></label><label>Category<select id="memoryCategory"><option value="project">Project context</option><option value="preference">Preference</option><option value="decision">Decision</option><option value="research">Research finding</option><option value="instruction">Standing instruction</option></select></label><label>Content<textarea id="memoryContent" rows="4" maxlength="12000" placeholder="Tuliskan informasi yang perlu diingat Agent..."></textarea></label><label class="inline-check"><input type="checkbox" id="memoryPinned"> Pin memory (prioritaskan dalam konteks)</label><button class="primary-btn" id="saveMemory">＋ Save memory</button></div><div id="memoryList" class="document-list"></div></div></section>
       <section class="view" id="toolsView"><div class="utility-page"><div class="eyebrow">INTEGRATION DIRECTORY</div><h1>Tools that <em>do work.</em></h1><p class="muted">Live data sources and actions available to your agents. Public endpoints are used where possible.</p><div class="tool-grid" id="toolGrid"></div></div></section>
       <section class="view" id="documentsView"><div class="utility-page"><div class="eyebrow">KNOWLEDGE WORKSPACE</div><h1>Your files.<br><em>Agent context.</em></h1><p class="muted">Add source code, configuration, documents and other files. Text files are extracted; binary files are listed with metadata unless a dedicated reader is available.</p><div class="upload-card"><label class="primary-btn" for="documentUpload">＋ Add documents</label><input id="documentUpload" type="file" multiple accept="*/*" hidden><p class="field-note">Supports extensionless files and dotfiles such as Dockerfile, .dockerignore, README.md and core_bot.py. Text extraction limit: 20 MB per file; PDF extraction: first 40 pages. Binary files may need a dedicated parser.</p></div><div id="documentList" class="document-list"></div></div></section>
       <section class="view" id="imageView"><div class="utility-page"><div class="eyebrow">GENERATIVE VISUALS</div><h1>Image <em>studio.</em></h1><p class="muted">Generate images with Puter AI. Model availability and usage costs depend on your Puter account.</p><div class="upload-card"><label>Describe the image<textarea id="imagePrompt" rows="4" placeholder="A cinematic editorial illustration of a futuristic decentralized finance network…"></textarea></label><label>Image model (optional)<input id="imageModel" placeholder="Leave blank for default model"></label><button class="primary-btn" id="generateImage">Generate image →</button><div id="imageResult" class="image-result"></div></div></div></section>
@@ -179,7 +183,7 @@
           </div>
         </div>
       </section>
-      <section class="view" id="automationView"><div class="utility-page"><div class="eyebrow">LOCAL SCHEDULES</div><h1>Automate the <em>routine.</em></h1><p class="muted">Schedules run in this browser while 0xMan96 AI is open. They are not server-side cron jobs and cannot run if the browser is closed.</p><div class="upload-card"><label>Task name<input id="automationName" placeholder="Daily DeFi market brief"></label><label>Prompt<textarea id="automationPrompt" rows="3" placeholder="Summarize the latest DeFi TVL and notable changes…"></textarea></label><label>Run every<select id="automationInterval"><option value="60">Every hour</option><option value="360">Every 6 hours</option><option value="1440">Every 24 hours</option><option value="10080">Every 7 days</option></select></label><button class="primary-btn" id="addAutomation">＋ Save schedule</button></div><div id="automationList" class="document-list"></div></div></section>
+      <section class="view" id="workflowView"><div class="utility-page"><div class="eyebrow">WORKFLOW SCHEDULER</div><h1>Workflow <em>automation.</em></h1><p class="muted">Schedules run in this browser while 0xMan96 AI is open. They are not server-side cron jobs and cannot run if the browser is closed.</p><div class="upload-card"><label>Task name<input id="automationName" placeholder="Daily DeFi market brief"></label><label>Prompt<textarea id="automationPrompt" rows="3" placeholder="Summarize the latest DeFi TVL and notable changes…"></textarea></label><label>Run every<select id="automationInterval"><option value="60">Every hour</option><option value="360">Every 6 hours</option><option value="1440">Every 24 hours</option><option value="10080">Every 7 days</option></select></label><button class="primary-btn" id="addAutomation">＋ Save schedule</button></div><div id="automationList" class="document-list"></div></div></section>
     </main>
   </div>
 
