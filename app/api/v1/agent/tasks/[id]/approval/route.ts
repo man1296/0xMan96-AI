@@ -40,7 +40,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }).eq("id", id).eq("status", "awaiting_approval");
     if (updateError) return NextResponse.json({ error: "approval_update_failed" }, { status: 400 });
     await supabase.from("workflow_step_runs").update({ status: "failed", error_code: "approval_rejected", completed_at: new Date().toISOString() })
-      .eq("run_id", run?.id ?? "").eq("workspace_id", task.workspace_id).eq("user_id", user.id).eq("step_index", stepIndex);
+      .eq("run_id", run?.id ?? "").eq("run_id", run?.id ?? "").eq("workspace_id", task.workspace_id).eq("user_id", user.id).eq("step_index", stepIndex);
     await supabase.from("workflow_runs").update({ status: "cancelled", completed_at: new Date().toISOString() })
       .eq("agent_task_id", id).eq("user_id", user.id);
     return NextResponse.json({ status: "cancelled" });
