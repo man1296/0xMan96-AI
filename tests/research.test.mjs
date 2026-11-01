@@ -25,14 +25,14 @@ test("rejects unsafe protocols, local hosts and duplicate URLs", () => {
 });
 
 test("searchWeb uses a fixed provider endpoint and bounds results", async () => {
-  let requested;
+  const requested = [];
   const html = '<a class="result__a" href="https://example.com">Example</a><a class="result__snippet">Snippet</a>';
   const result = await searchWeb("  test query  ", 20, async (url, init) => {
-    requested = { url: String(url), init };
+    requested.push({ url: String(url), init });
     return new Response(html, { status: 200 });
   });
-  assert.match(requested.url, /^https:\/\/html\.duckduckgo\.com\/html\/\?/);
-  assert.equal(new URL(requested.url).searchParams.get("q"), "test query");
+  assert.match(requested[0].url, /^https:\/\/html\.duckduckgo\.com\/html\/\?/);
+  assert.equal(new URL(requested[0].url).searchParams.get("q"), "test query");
   assert.equal(result.results.length, 1);
   assert.equal(result.provider, "DuckDuckGo");
 });
