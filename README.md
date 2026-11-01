@@ -12,7 +12,7 @@ The existing static HTML/CSS/JavaScript workspace remains available on GitHub Pa
 - Multi-tenant schema for profiles, workspaces, conversations, messages, knowledge documents, creator projects, generation jobs, audit events and API rate limits.
 - Authenticated, validated, database-rate-limited OpenRouter streaming proxy.
 - Free-first AI default: OpenRouter's `openrouter/free` router. It selects from currently available free models; availability and provider rate limits can change.
-- Paid model IDs remain allowlisted for deliberate selection, but the server does not automatically fall back from the free router to a paid model.
+- Paid model IDs are rejected by request validation while free-only mode is enabled; no automatic paid fallback exists.
 - Provider credentials are server-only and intentionally not stored in source code.
 
 ## Local backend setup
