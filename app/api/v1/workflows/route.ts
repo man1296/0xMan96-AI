@@ -73,6 +73,9 @@ export async function POST(request: Request) {
       : null,
     steps
   }).select("id,name,description,trigger_type,trigger_config,steps,enabled,next_run_at,last_triggered_at,created_at").single();
+  if (insertError?.message?.includes("active_workflow_schedule_limit_reached")) {
+    return NextResponse.json({ error: "active_workflow_schedule_limit_reached", limit: 5 }, { status: 429 });
+  }
   if (insertError) return NextResponse.json({ error: "workflow_create_failed" }, { status: 400 });
   return NextResponse.json({ workflow: data }, { status: 201 });
 }
