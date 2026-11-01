@@ -298,7 +298,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
               <div style={{ ...panel, minHeight: 520, display: "flex", flexDirection: "column", gap: 16 }}>
                 <div>
                   <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>Task conversation</h2>
-                  <p style={{ ...muted, margin: 0, fontSize: 13 }}>Send an instruction. The Agent queues it, loads workspace Memory, and records its result.</p>
+                  <p style={{ ...muted, margin: 0, fontSize: 13 }}>Send an instruction. The Agent creates a bounded plan, uses your saved context, executes each step, and records the result.</p>
                 </div>
                 <div style={{ display: "grid", gap: 12, flex: 1, alignContent: "start" }}>
                   {!tasks.length && <p style={muted}>No tasks yet. Start with a research, planning, analysis, or writing task.</p>}
