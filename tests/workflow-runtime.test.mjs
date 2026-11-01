@@ -105,3 +105,9 @@ test("expired approved tasks remain resumable after their lease expires", () => 
   assert.match(recovery, /approval ->> 'decision', ''\) <> 'approved'/);
   assert.match(recovery, /then 'queued'/);
 });
+
+test("an Agent task can have only one durable Workflow run", () => {
+  const migration = fs.readFileSync("supabase/migrations/20261101205623_workflow_run_one_per_agent_task.sql", "utf8");
+  assert.match(migration, /create unique index if not exists workflow_runs_agent_task_id_unique/);
+  assert.match(migration, /where agent_task_id is not null/);
+});
