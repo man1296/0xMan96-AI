@@ -36,5 +36,8 @@ The existing static HTML/CSS/JavaScript workspace remains available on GitHub Pa
 ## Deployment status
 Vercel project creation was previously rejected by the selected team with HTTP 402 (`resource_creation_blocked`). The backend now has a Cloudflare Workers deployment configuration using the OpenNext adapter. GitHub Pages remains independent and continues serving the existing static app. The Cloudflare adapter build is included in CI; deployment still requires connecting a Cloudflare account and setting server-side secrets. Cloudflare deployment compatibility still needs to be validated before choosing it as the backend host.
 
+## Cloudflare deployment diagnostics
+Workers Builds runs when a commit is pushed to its configured production branch. Dashboard-only variable changes are not Git commits and do not create a Workers Builds history entry. After changing runtime variables or secrets in the Cloudflare Dashboard, verify that a new Worker version is actually created before relying on those settings.
+
 ## Remaining integration work
 Durable worker/queue, embeddings/vector retrieval, document malware scanning, media rendering/export, social platform OAuth publishing, Web3 provider credentials, billing, observability and external penetration testing are not yet implemented.
