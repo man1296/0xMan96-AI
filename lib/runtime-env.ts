@@ -7,17 +7,13 @@ export interface RuntimeEnvResult {
   source: RuntimeEnvSource;
 }
 
-/**
- * Read server-side configuration at request time.
- * Use node:process with a dynamic key to avoid Next.js build-time replacement
- * of process.env.KEY expressions. Public NEXT_PUBLIC values use literal
- * accesses because Next.js may inline them during compilation.
- */
 function readRuntimeProcessEnv(name: string): string | undefined {
   switch (name) {
     case "OPENROUTER_API_KEY":
     case "OPENROUTER_DEFAULT_MODEL":
     case "OPENROUTER_BASE_URL":
+    case "SUPABASE_SERVICE_ROLE_KEY":
+    case "AGENT_WORKER_SECRET":
       return process.env[name];
     case "NEXT_PUBLIC_SUPABASE_URL":
       return process.env.NEXT_PUBLIC_SUPABASE_URL;
