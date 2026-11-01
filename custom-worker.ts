@@ -28,7 +28,13 @@ export default {
               bindings.NEXT_PUBLIC_SUPABASE_URL.length > 0,
             supabaseAnonKey:
               typeof bindings.NEXT_PUBLIC_SUPABASE_ANON_KEY === "string" &&
-              bindings.NEXT_PUBLIC_SUPABASE_ANON_KEY.length > 0
+              bindings.NEXT_PUBLIC_SUPABASE_ANON_KEY.length > 0,
+            serviceRoleKey:
+              typeof bindings.SUPABASE_SERVICE_ROLE_KEY === "string" &&
+              bindings.SUPABASE_SERVICE_ROLE_KEY.length > 0,
+            agentWorkerSecret:
+              typeof bindings.AGENT_WORKER_SECRET === "string" &&
+              bindings.AGENT_WORKER_SECRET.length > 0
           },
           note: "Presence checks only. Secret values are never returned."
         },
@@ -39,5 +45,20 @@ export default {
     }
 
     return handler.fetch(request, env, ctx);
+  },
+
+  async scheduled(_controller: unknown, env: unknown, ctx: unknown) {
+    const bindings = env as Record<string, unknown>;
+    const secret = bindings.AGENT_WORKER_SECRET;
+    if (typeof secret !== "string" || !secret) return;
+
+    const request = new Request("https://internal.0xman96-ai/api/internal/agent-worker", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + secret }
+    });
+    const execution = handler.fetch(request, env, ctx).then(async (response: Response) => {
+      if (!response.ok) console.error("Agent worker tick failed with HTTP", response.status);
+    }).catch(() => console.error("Agent worker tick failed"));
+    (ctx as { waitUntil(promise: Promise<unknown>): void }).waitUntil(execution);
   }
 };
