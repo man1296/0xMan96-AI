@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 
 function renderAgentContent(content: string) {
-  return content.split(/(https?:\\/\\/[^\\s<>"')]+)/g).map((part, index) => {
-    if (!/^https?:\\/\\//i.test(part)) return part;
+  return content.split(/(https?:\/\/[^\s<>"')]+)/g).map((part, index) => {
+    if (!/^https?:\/\//i.test(part)) return part;
     const url = part.replace(/[.,;:!?]+$/, "");
     const trailing = part.slice(url.length);
     return <span key={index}><a href={url} target="_blank" rel="noopener noreferrer" style={{ color: "#bba6ff", textDecoration: "underline", overflowWrap: "anywhere" }}>{url}</a>{trailing}</span>;
