@@ -2,6 +2,7 @@ import { readJson } from "@/lib/http/read-json";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { chatRequestSchema } from "@/lib/validation/chat.mjs";
+import { getRuntimeEnv } from "@/lib/runtime-env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,9 +33,9 @@ export async function POST(request: Request) {
     if (limitError) return NextResponse.json({ error: "rate_limit_unavailable" }, { status: 503 });
     if (!allowed) return NextResponse.json({ error: "rate_limited", retryAfterSeconds: 60 }, { status: 429, headers: { "Retry-After": "60" } });
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    const defaultModel = process.env.OPENROUTER_DEFAULT_MODEL || FREE_DEFAULT_MODEL;
-    const base = process.env.OPENROUTER_BASE_URL || OPENROUTER_DEFAULT_BASE_URL;
+    const apiKey = getRuntimeEnv("OPENROUTER_API_KEY");
+    const defaultModel = getRuntimeEnv("OPENROUTER_DEFAULT_MODEL") || FREE_DEFAULT_MODEL;
+    const base = getRuntimeEnv("OPENROUTER_BASE_URL") || OPENROUTER_DEFAULT_BASE_URL;
     if (!apiKey) return NextResponse.json({ error: "ai_provider_not_configured" }, { status: 503 });
 
     const gateway = new URL(base);
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         "Accept": "text/event-stream",
-        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://man1296.github.io/0xMan96-AI/",
+        "HTTP-Referer": getRuntimeEnv("NEXT_PUBLIC_APP_URL") || "https://man1296.github.io/0xMan96-AI/",
         "X-OpenRouter-Title": "0xMan96 AI"
       },
       body: JSON.stringify({
