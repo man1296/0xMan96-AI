@@ -27,6 +27,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return NextResponse.json({ error: "task_not_awaiting_approval" }, { status: 409 });
   }
   const approval = task.approval && typeof task.approval === "object" ? task.approval as Record<string, unknown> : {};
+  const { data: run } = await supabase.from("workflow_runs").select("id").eq("agent_task_id", id).eq("user_id", user.id).maybeSingle();
   const stepIndex = Number(approval.pending_step_index);
   if (!Number.isInteger(stepIndex) || stepIndex < 0 || stepIndex > 5) {
     return NextResponse.json({ error: "approval_context_invalid" }, { status: 409 });
@@ -39,7 +40,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }).eq("id", id).eq("status", "awaiting_approval");
     if (updateError) return NextResponse.json({ error: "approval_update_failed" }, { status: 400 });
     await supabase.from("workflow_step_runs").update({ status: "failed", error_code: "approval_rejected", completed_at: new Date().toISOString() })
-      .eq("workspace_id", task.workspace_id).eq("user_id", user.id).eq("step_index", stepIndex);
+      .eq("run_id", run?.id ?? "").eq("workspace_id", task.workspace_id).eq("user_id", user.id).eq("step_index", stepIndex);
     await supabase.from("workflow_runs").update({ status: "cancelled", completed_at: new Date().toISOString() })
       .eq("agent_task_id", id).eq("user_id", user.id);
     return NextResponse.json({ status: "cancelled" });
