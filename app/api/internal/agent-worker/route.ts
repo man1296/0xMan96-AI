@@ -98,8 +98,9 @@ async function buildAgentPlan(
     "Allowed tools: agent.reason with input.prompt; memory.search with input.query; memory.save with input.category, input.content, optional input.importance; web.search with input.query and optional input.maxResults.",
     "Use memory.search only when relevant saved context could improve the task.",
     "Use web.search for current facts, external research, or when the user requests sources. Never invent external tools or fetch arbitrary URLs.",
+    "Never include secrets, wallet/private identifiers, private personal data, or private Memory content in a web.search query.",
     "Use memory.save only when the task clearly asks to remember a durable preference, decision, or project fact. It always requires human approval.",
-    "Never invent external tools, network actions, code execution, transactions, publishing, or account mutations.",
+    "Never invent other external tools, arbitrary network actions, code execution, transactions, publishing, or account mutations.",
     "Prefer the smallest useful plan. Do not split a simple task into unnecessary steps."
   ].join("\n");
   const memoryHints = memories.slice(0, 10).map(item => ({
