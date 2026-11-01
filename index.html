@@ -182,7 +182,7 @@
           </div>
         </div>
       </section>
-      <section class="view" id="workflowView"><div class="utility-page"><div class="eyebrow">WORKFLOW SCHEDULER</div><h1>Workflow <em>automation.</em></h1><p class="muted">Schedules run in this browser while 0xMan96 AI is open. They are not server-side cron jobs and cannot run if the browser is closed.</p><div class="upload-card"><label>Task name<input id="automationName" placeholder="Daily DeFi market brief"></label><label>Prompt<textarea id="automationPrompt" rows="3" placeholder="Summarize the latest DeFi TVL and notable changes…"></textarea></label><label>Run every<select id="automationInterval"><option value="60">Every hour</option><option value="360">Every 6 hours</option><option value="1440">Every 24 hours</option><option value="10080">Every 7 days</option></select></label><button class="primary-btn" id="addAutomation">＋ Save schedule</button></div><div id="automationList" class="document-list"></div></div></section>
+      <section class="view" id="workflowView"><div class="utility-page"><div class="eyebrow">WORKFLOW SCHEDULER</div><h1>Workflow <em>automation.</em></h1><p class="muted">Schedules run in this browser while 0xMan96 AI is open. They are not server-side cron jobs and cannot run if the browser is closed.</p><div class="upload-card"><label>Task name<input id="automationName" placeholder="Daily DeFi market brief"></label><label>Prompt<textarea id="automationPrompt" rows="3" placeholder="Summarize the latest DeFi TVL and notable changes…"></textarea></label><label>Run every<select id="automationInterval"><option value="60">Every hour</option><option value="360">Every 6 hours</option><option value="1440">Every 24 hours</option><option value="10080">Every 7 days</option></select></label><button class="primary-btn" id="addAutomation">＋ Save schedule</button></div><div class="eyebrow" style="margin-top:28px">AGENT EXECUTION HISTORY</div><div id="workflowRunHistory" class="document-list"></div><div id="automationList" class="document-list"></div></div></section>
     </main>
   </div>
 
@@ -198,6 +198,8 @@
   </div>
   <div class="toast" id="toast"></div>
   <script src="app.js"></script>
+  <script src="intelligence.js"></script>
+  <script src="autonomy.js"></script>
   <script src="enhancements.js"></script>
   <script src="ui-fixes.js"></script>
 </body>

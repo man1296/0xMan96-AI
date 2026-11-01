@@ -1,0 +1,7 @@
+/* Bounded autonomous task primitives. Tool permissions remain explicit and human-controlled. */
+(()=>{"use strict";
+const MAX_STEPS=6,MAX_CHARS=12000;
+function validatePlan(plan){if(!Array.isArray(plan))throw Error("Agent plan must be an array.");return plan.slice(0,MAX_STEPS).map((s,i)=>{const task=String(s?.task||"").trim();if(!task||task.length>MAX_CHARS)throw Error("Invalid task at step "+(i+1));return {id:String(s.id||"step-"+(i+1)),task,requiresApproval:s.requiresApproval!==false,verification:String(s.verification||"Check that the requested output is complete.")}})}
+async function execute(plan,runner,{approve=async()=>false,onStep=()=>{}}={}){const steps=validatePlan(plan),results=[];for(let i=0;i<steps.length;i++){const step=steps[i];onStep({phase:"approval",index:i+1,total:steps.length,step});if(step.requiresApproval&&!await approve(step)) {results.push({step,status:"blocked",reason:"Human approval not granted"});break}onStep({phase:"running",index:i+1,total:steps.length,step});try{const output=await runner(step.task,step);results.push({step,status:"completed",output:String(output||"").slice(0,MAX_CHARS)});onStep({phase:"completed",index:i+1,total:steps.length,step})}catch(error){results.push({step,status:"failed",error:String(error?.message||error)});break}}return {results,completed:results.filter(x=>x.status==="completed").length,stopped:results.some(x=>x.status!=="completed")}}
+window.ZeroXAutonomy=Object.freeze({validatePlan,execute,limits:{maxSteps:MAX_STEPS,maxOutputCharacters:MAX_CHARS}});
+})();
