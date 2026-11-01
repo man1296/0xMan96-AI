@@ -189,7 +189,7 @@ async function runAgent(){
  state.workflowRuns=Array.isArray(state.workflowRuns)?state.workflowRuns:[];state.workflowRuns.unshift(run);state.workflowRuns=state.workflowRuns.slice(0,100);save();
  const show=s=>{$("agentOutput").innerHTML=fmt(s);$("agentOutput").scrollTop=$("agentOutput").scrollHeight};
  try{
-  const planText=await runWithTools([{role:"user",content:"Create a safe execution plan. Return ONLY JSON: {\\"steps\\":[{\\"task\\":\\"concrete action\\",\\"verification\\":\\"verification\\",\\"requiresApproval\\":true}]}. Use 1-6 steps. Read-only research/drafting may set requiresApproval false. Publishing, sending, spending, deleting, account changes and irreversible actions MUST require approval. Task: "+task}],activeAgent,()=>{},{includeMemory:true});
+  const planText=await runWithTools([{role:"user",content:`Create a safe execution plan. Return ONLY JSON with this shape: {"steps":[{"task":"concrete action","verification":"verification","requiresApproval":true}]}. Use 1-6 steps. Read-only research/drafting may set requiresApproval false. Publishing, sending, spending, deleting, account changes and irreversible actions MUST require approval. Task: ${task}`}],activeAgent,()=>{},{includeMemory:true});
   let plan;try{plan=JSON.parse(planText.match(/\\{[\\s\\S]*\\}/)?.[0])?.steps}catch{}
   if(!Array.isArray(plan)||!plan.length)plan=[{task,verification:"Review the result for completeness.",requiresApproval:false}];
   plan=window.ZeroXAutonomy.validatePlan(plan);run.plan=plan;run.status="running";save();
