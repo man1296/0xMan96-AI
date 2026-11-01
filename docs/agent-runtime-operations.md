@@ -28,7 +28,7 @@ Configure these as Worker secrets, never as plaintext vars:
 - `SUPABASE_SERVICE_ROLE_KEY`: server-only Supabase service role key. Never expose it to the browser.
 - `AGENT_WORKER_SECRET`: long random secret shared by the scheduled Worker and the internal endpoint.
 
-After configuring secrets, deploy a new Worker version and verify `/__runtime-binding-check` reports only boolean presence. The diagnostic never returns secret values.
+Add these values as GitHub Actions repository/environment secrets, then run the guarded `Deploy 0xMan96 AI to Cloudflare` workflow from the `main` branch and type `deploy` for confirmation. The workflow checks out `main` only and fails closed if any secret is missing. It deploys a new Worker version; verify `/__runtime-binding-check` reports only boolean presence. The diagnostic never returns secret values.
 
 ## Security and operational verification
 
