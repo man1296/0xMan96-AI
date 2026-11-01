@@ -323,6 +323,8 @@ export async function POST(request: Request) {
   });
   const { error: recoveryError } = await supabase.rpc("recover_expired_agent_tasks");
   if (recoveryError) return NextResponse.json({ error: "task_recovery_failed" }, { status: 503 });
+  const { data: scheduledEnqueued, error: scheduleError } = await supabase.rpc("enqueue_due_workflow_schedules", { p_limit: 10 });
+  if (scheduleError) return NextResponse.json({ error: "workflow_schedule_dispatch_failed" }, { status: 503 });
   const { data: tasks, error: claimError } = await supabase.rpc("claim_agent_tasks", { p_limit: 2 });
   if (claimError) return NextResponse.json({ error: "task_claim_failed" }, { status: 503 });
 
@@ -352,6 +354,7 @@ export async function POST(request: Request) {
   }));
   const summary = {
     claimed: claimedTasks.length,
+    scheduledEnqueued: Number(scheduledEnqueued ?? 0),
     succeeded: outcomes.filter(result => result === "succeeded").length,
     awaitingApproval: outcomes.filter(result => result === "awaiting_approval").length,
     failed: outcomes.filter(result => result === "failed").length
