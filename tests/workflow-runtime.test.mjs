@@ -155,3 +155,14 @@ test("invalid scheduled Workflow configuration is disabled safely", () => {
   assert.match(scheduleGuardMigration, /coalesce\(v_interval, ''\) not in \('hourly', 'daily', 'weekly'\)/);
   assert.match(scheduleGuardMigration, /set enabled = false, next_run_at = null/);
 });
+
+
+const scheduleOverlapMigration = fs.readFileSync("supabase/migrations/20261101220913_workflow_schedule_single_active_run.sql", "utf8");
+
+test("scheduled Workflows do not overlap and active schedules are capped", () => {
+  assert.match(scheduleOverlapMigration, /t\.status in \('queued', 'running', 'awaiting_approval'\)/);
+  assert.match(scheduleOverlapMigration, /for update skip locked/i);
+  assert.match(workflowApi, /count\(\?|\{ count: "exact", head: true \}/);
+  assert.match(workflowApi, /active_workflow_schedule_limit_reached/);
+  assert.match(workflowApi, /\(count \?\? 0\) >= 5/);
+});
