@@ -30,7 +30,7 @@ async function constantTimeMatch(left: string, right: string): Promise<boolean> 
 }
 
 async function executeTask(
-  supabase: ReturnType<typeof createSupabaseClient>,
+  supabase: ReturnType<typeof createSupabaseClient<any>>,
   task: AgentTask,
   apiKey: string,
   model: string,
@@ -147,7 +147,7 @@ export async function POST(request: Request) {
 
   if (!apiKey) return NextResponse.json({ error: "ai_provider_not_configured" }, { status: 503 });
 
-  const supabase = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+  const supabase = createSupabaseClient<any>(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
