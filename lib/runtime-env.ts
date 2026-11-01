@@ -1,6 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-export type RuntimeEnvSource = "cloudflare_global" | "open_next_context" | "process_env" | "missing";
+export type RuntimeEnvSource = "open_next_context" | "process_env" | "missing";
 
 export interface RuntimeEnvResult {
   value: string | undefined;
@@ -8,21 +8,11 @@ export interface RuntimeEnvResult {
 }
 
 /**
- * Read a Worker secret from the native Cloudflare env binding first,
- * then OpenNext's request context, then process.env for local development.
+ * Read a Worker binding through OpenNext's request context.
+ * Fall back to process.env for local development and tests.
  * Never log or expose the returned secret value.
  */
 export async function readRuntimeEnv(name: string): Promise<RuntimeEnvResult> {
-  try {
-    const workerModule = await import("cloudflare:workers");
-    const value = workerModule.env[name];
-    if (typeof value === "string" && value.length > 0) {
-      return { value, source: "cloudflare_global" };
-    }
-  } catch {
-    // The native Workers module is unavailable in local Node.js development.
-  }
-
   try {
     const workerEnv = getCloudflareContext().env as unknown as Record<string, unknown>;
     const value = workerEnv[name];
