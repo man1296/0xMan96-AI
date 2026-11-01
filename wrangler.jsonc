@@ -10,6 +10,9 @@
   ],
   "keep_vars": true,
   "workers_dev": true,
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
   "vars": {
     "NEXT_PUBLIC_SUPABASE_URL": "https://ndrovsdafoanpaqlnmlx.supabase.co",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_An0t8f25gPXOonIEHB8Nbw_cdc9VMJm",
