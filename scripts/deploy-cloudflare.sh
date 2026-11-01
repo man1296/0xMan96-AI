@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Workers Builds exposes build secrets to this process only.
-# Never print, persist, or commit the secret value.
-if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then
-  echo "Missing required build secret: OPENROUTER_API_KEY" >&2
-  exit 1
-fi
+# Deployment credentials are runtime secrets. Never print, persist, or commit their values.
+for secret_name in OPENROUTER_API_KEY SUPABASE_SERVICE_ROLE_KEY AGENT_WORKER_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+  if [[ -z "${!secret_name:-}" ]]; then
+    echo "Missing required deployment secret or variable: $secret_name" >&2
+    exit 1
+  fi
+done
 
-echo "STEP 1/3: Building the OpenNext application..."
+echo "STEP 1/4: Building the OpenNext application..."
 npx opennextjs-cloudflare build
 
-echo "STEP 2/3: Deploying the Cloudflare Worker..."
+echo "STEP 2/4: Deploying the Cloudflare Worker..."
 npx opennextjs-cloudflare deploy -- --keep-vars
 
-# Attach the build-only secret to the deployed Worker runtime.
-# Wrangler reads the value from stdin and creates a new Worker version.
-echo "STEP 3/3: Installing OPENROUTER_API_KEY as a runtime Secret (value hidden)..."
-printf '%s' "$OPENROUTER_API_KEY" | npx wrangler secret put OPENROUTER_API_KEY
-echo "Runtime Secret installation command completed."
+echo "STEP 3/4: Installing provider and Agent runtime secrets..."
+for secret_name in OPENROUTER_API_KEY SUPABASE_SERVICE_ROLE_KEY AGENT_WORKER_SECRET; do
+  printf '%s' "${!secret_name}" | npx wrangler secret put "$secret_name"
+done
+
+echo "STEP 4/4: Deployment commands completed. Verify the deployed Worker and scheduled trigger before enabling users."
