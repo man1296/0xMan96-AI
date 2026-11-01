@@ -41,3 +41,36 @@ test("searchWeb rejects empty queries and upstream errors", async () => {
   await assert.rejects(() => searchWeb("  ", 5, fetch), /web_search_requires_query/);
   await assert.rejects(() => searchWeb("query", 5, async () => new Response("", { status: 429 })), /web_search_rate_limited/);
 });
+
+
+test("research fetches at most three bounded HTTPS source excerpts", async () => {
+  let calls = 0;
+  const searchHtml = '<a class="result__a" href="https://example.com/article">Example</a><a class="result__snippet">Snippet</a>';
+  const pageHtml = '<html><title>Source title</title><script>secret injected text</script><h1>Research finding</h1><p>Useful evidence &amp; context.</p></html>';
+  const result = await searchWeb("research", 5, async (url) => {
+    calls++;
+    if (String(url).startsWith("https://html.duckduckgo.com/")) {
+      return new Response(searchHtml, { status: 200, headers: { "content-type": "text/html" } });
+    }
+    return new Response(pageHtml, { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
+  });
+  assert.equal(calls, 2);
+  assert.equal(result.results[0].fetched, true);
+  assert.equal(result.results[0].title, "Source title");
+  assert.match(result.results[0].content, /Useful evidence & context/);
+  assert.doesNotMatch(result.results[0].content, /secret injected text/);
+});
+
+test("research does not follow redirects to unsafe destinations", async () => {
+  let calls = 0;
+  const searchHtml = '<a class="result__a" href="https://example.com/article">Example</a>';
+  const result = await searchWeb("research", 1, async (url) => {
+    calls++;
+    if (String(url).startsWith("https://html.duckduckgo.com/")) {
+      return new Response(searchHtml, { status: 200, headers: { "content-type": "text/html" } });
+    }
+    return new Response(null, { status: 302, headers: { location: "http://127.0.0.1/admin" } });
+  });
+  assert.equal(calls, 2);
+  assert.equal(result.results[0].fetched, false);
+});
