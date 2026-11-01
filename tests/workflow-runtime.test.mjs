@@ -36,3 +36,16 @@ test("Workflow definitions are workspace scoped and validated before persistence
   assert.match(workflowApi, /validateWorkflowSteps/);
   assert.match(workflowApi, /steps: z\.array\(z\.unknown\(\)\)\.max\(6\)/);
 });
+
+test("approved resumes do not consume retry attempts", async () => {
+  const migration = fs.readFileSync("supabase/migrations/20261101204753_agent_task_approval_resume_attempts.sql", "utf8");
+  assert.match(migration, /approval ->> 'decision' = 'approved'/);
+  assert.match(migration, /attempts = t\.attempts \+ case/);
+});
+
+test("task execution state is writable only by the server role", () => {
+  const migration = fs.readFileSync("supabase/migrations/20261101204839_lock_agent_task_mutations_to_server.sql", "utf8");
+  assert.match(migration, /revoke all on table public\.agent_tasks from anon, authenticated/);
+  assert.match(migration, /grant all on table public\.agent_tasks to service_role/);
+  assert.match(migration, /grant select on table public\.agent_tasks to authenticated/);
+});
