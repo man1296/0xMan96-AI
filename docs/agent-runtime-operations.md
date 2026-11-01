@@ -16,7 +16,7 @@ Workflow definitions contain at most six ordered steps. The server validates eve
 
 No arbitrary code, shell commands, unrestricted HTTP, browser automation, publishing, wallet signing, financial transactions, or external account mutations are exposed by this runtime. Unknown tool names are rejected. Workflow content and Memory are treated as untrusted data, not system instructions.
 
-Every step is persisted in `workflow_step_runs`. Steps requiring approval pause the task and set `awaiting_approval`. The authenticated approval endpoint can approve and resume or reject the pending task. Approval is bound to the task owner and exact Workflow run. Memory writes always require approval, even if a client attempts to mark them as approval-free.
+Every step is persisted in `workflow_step_runs`. Steps requiring approval pause the task and set `awaiting_approval`. The authenticated approval endpoint can approve and resume or reject the pending task. Approval is bound to the task owner and exact Workflow run. Memory writes always require approval, even if a client attempts to mark them as approval-free. Approved resumes do not consume retry attempts. Task, run, and step state is read-only to browser roles; enqueue, approval transitions, and execution writes go through authenticated server routes or the service-role worker. A deterministic step id makes Memory writes idempotent across worker retries.
 
 The Workspace UI includes a Workflow library and a pending-approval panel. Its current editor creates sequential reasoning steps; the server registry also supports Memory search and approval-gated Memory writes for workflows submitted through the API.
 
