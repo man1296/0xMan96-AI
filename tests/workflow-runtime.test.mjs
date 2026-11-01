@@ -209,3 +209,22 @@ test("read-only web research is bounded and its results are cited by the Agent",
   assert.match(worker, /cite only their source IDs/);
   assert.match(worker, /Never invent external tools or fetch arbitrary URLs/);
 });
+
+
+const semanticRpcMigration = fs.readFileSync("supabase/migrations/20261102095000_public_rpc_wrapper_semantic_memory.sql", "utf8");
+const rlsOptimizationMigration = fs.readFileSync("supabase/migrations/20261102094000_rls_policy_initplan_and_duplicate_index_cleanup.sql", "utf8");
+
+test("semantic Memory RPC is exposed only to the service role", () => {
+  assert.match(semanticRpcMigration, /create or replace function public\.match_agent_memories/);
+  assert.match(semanticRpcMigration, /security invoker/i);
+  assert.match(semanticRpcMigration, /revoke all on function public\.match_agent_memories[\s\S]*from public, anon, authenticated/i);
+  assert.match(semanticRpcMigration, /grant execute on function public\.match_agent_memories[\s\S]*to service_role/i);
+  assert.match(embeddings, /backfillMissingMemoryEmbeddings/);
+});
+
+test("RLS initplan warnings and duplicate Workflow indexes are addressed", () => {
+  assert.match(rlsOptimizationMigration, /select auth\.uid\(\)/);
+  assert.match(rlsOptimizationMigration, /select private\.is_workspace_member/);
+  assert.match(rlsOptimizationMigration, /drop index if exists public\.workflow_step_runs_run_step_unique/);
+  assert.match(rlsOptimizationMigration, /drop index if exists public\.workflow_steps_run_idx/);
+});
