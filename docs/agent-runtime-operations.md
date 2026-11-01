@@ -11,10 +11,11 @@ The database remains the source of truth. The queue RPC uses row locks with `SKI
 When a user starts a task without selecting a saved Workflow, the configured model first proposes a plan of up to six steps. The server parses and validates that plan, persists it before execution, and falls back to a single reasoning step if the proposed JSON is invalid. Saved Workflow definitions also contain at most six ordered steps. The server validates every step against a strict allowlist:
 
 - `agent.reason`: call the configured OpenRouter model for a bounded reasoning/drafting step.
-- `memory.search`: search the current workspace's saved Memory.
-- `memory.save`: save a Memory entry after explicit user approval.
+- `memory.search`: retrieve relevant workspace Memory using multilingual vector similarity when Workers AI is available, with lexical fallback.
+- `memory.save`: save a Memory entry after explicit user approval; embeddings are generated with Cloudflare Workers AI when the binding is available.
+- `web.search`: run a bounded, read-only DuckDuckGo search (up to eight results) and preserve source IDs, titles, snippets, and URLs for citations.
 
-No arbitrary code, shell commands, unrestricted HTTP, browser automation, publishing, wallet signing, financial transactions, or external account mutations are exposed by this runtime. Unknown tool names are rejected. Workflow content and Memory are treated as untrusted data, not system instructions.
+No arbitrary code, shell commands, unrestricted HTTP, browser automation, publishing, wallet signing, financial transactions, or external account mutations are exposed by this runtime. Unknown tool names are rejected. Workflow content, Memory, and retrieved web snippets are treated as untrusted data, not system instructions. Web search sends the query to DuckDuckGo; it does not fetch arbitrary result URLs or execute page content.
 
 Every step is persisted in `workflow_step_runs`. Steps requiring approval pause the task and set `awaiting_approval`. The authenticated approval endpoint can approve and resume or reject the pending task. Approval is bound to the task owner and exact Workflow run. Memory writes always require approval, even if a client attempts to mark them as approval-free. Approval is bound to a fingerprint of the exact step definition and shows the action preview; if the step changes while awaiting approval, the previous approval is invalidated and must be granted again. Approved resumes do not consume retry attempts, and lease recovery preserves an approved continuation. Task, run, and step state is read-only to browser roles; enqueue, approval transitions, and execution writes go through authenticated server routes or the service-role worker. A deterministic step id makes Memory writes idempotent across worker retries.
 
@@ -54,7 +55,7 @@ Add these values as GitHub Actions repository/environment secrets, then run the 
 - Add authenticated end-to-end tests against a non-production workspace and test provider.
 - Add idempotency keys for task enqueue and approval actions.
 - Add cancellation, timeout, per-user budgets, rate limits, and dead-letter review.
-- Add semantic/vector Memory retrieval and explicit Memory curation controls.
+- Add a backfill job for pre-existing Memory entries and explicit Memory curation controls.
 - Add a full visual step editor and workflow versioning.
 - Add cron-expression scheduling, timezone-aware wall-clock schedules, and per-workflow schedule history.
 - Add observability, backup/restore drills, and independent security testing.
