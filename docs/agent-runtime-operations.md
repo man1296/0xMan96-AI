@@ -2,9 +2,9 @@
 
 ## Current scope
 
-The scheduled Cloudflare Worker invokes the authenticated internal Agent runtime every minute. The runtime atomically claims up to three queued tasks from Supabase, loads workspace Agent instructions and relevant Memory, executes a bounded Workflow, and persists task, Workflow-run, and step-run results.
+The scheduled Cloudflare Worker invokes the authenticated internal Agent runtime every minute. The runtime atomically claims up to two queued tasks concurrently from Supabase, loads workspace Agent instructions and relevant Memory, executes a bounded Workflow, and persists task, Workflow-run, and step-run results.
 
-The database remains the source of truth. The queue RPC uses row locks with `SKIP LOCKED`, five-minute leases, bounded attempts, and stale-lease recovery.
+The database remains the source of truth. The queue RPC uses row locks with `SKIP LOCKED`, twelve-minute leases, bounded attempts, and stale-lease recovery.
 
 ## Workflow execution
 
@@ -16,7 +16,7 @@ Workflow definitions contain at most six ordered steps. The server validates eve
 
 No arbitrary code, shell commands, unrestricted HTTP, browser automation, publishing, wallet signing, financial transactions, or external account mutations are exposed by this runtime. Unknown tool names are rejected. Workflow content and Memory are treated as untrusted data, not system instructions.
 
-Every step is persisted in `workflow_step_runs`. Steps requiring approval pause the task and set `awaiting_approval`. The authenticated approval endpoint can approve and resume or reject the pending task. Approval is bound to the task owner and exact Workflow run. Memory writes always require approval, even if a client attempts to mark them as approval-free. Approved resumes do not consume retry attempts. Task, run, and step state is read-only to browser roles; enqueue, approval transitions, and execution writes go through authenticated server routes or the service-role worker. A deterministic step id makes Memory writes idempotent across worker retries.
+Every step is persisted in `workflow_step_runs`. Steps requiring approval pause the task and set `awaiting_approval`. The authenticated approval endpoint can approve and resume or reject the pending task. Approval is bound to the task owner and exact Workflow run. Memory writes always require approval, even if a client attempts to mark them as approval-free. Approval is bound to a fingerprint of the exact step definition and shows the action preview; if the step changes while awaiting approval, the previous approval is invalidated and must be granted again. Approved resumes do not consume retry attempts. Task, run, and step state is read-only to browser roles; enqueue, approval transitions, and execution writes go through authenticated server routes or the service-role worker. A deterministic step id makes Memory writes idempotent across worker retries.
 
 The Workspace UI includes a Workflow library, a pending-approval panel, and persisted run/step history. Its current editor creates sequential reasoning steps; the server registry also supports Memory search and approval-gated Memory writes for workflows submitted through the API.
 
