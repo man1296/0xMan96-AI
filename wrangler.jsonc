@@ -9,6 +9,7 @@
     "global_fetch_strictly_public"
   ],
   "keep_vars": true,
+  "ai": { "binding": "AI" },
   "workers_dev": true,
   "triggers": {
     "crons": ["* * * * *"]
