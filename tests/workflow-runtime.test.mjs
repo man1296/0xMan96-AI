@@ -49,3 +49,16 @@ test("task execution state is writable only by the server role", () => {
   assert.match(migration, /grant all on table public\.agent_tasks to service_role/);
   assert.match(migration, /grant select on table public\.agent_tasks to authenticated/);
 });
+
+test("Memory writes use a deterministic idempotency key", () => {
+  assert.match(worker, /stableUuid\(runId \+ ":" \+ index \+ ":memory\.save"\)/);
+  assert.match(worker, /upsert\(/);
+});
+
+test("task creation and approval transitions use server-side credentials", () => {
+  const taskApi = fs.readFileSync("app/api/v1/agent/tasks/route.ts", "utf8");
+  assert.match(taskApi, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(taskApi, /admin\.from\("agent_tasks"\)\.insert/);
+  assert.match(approval, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(approval, /admin\.from\("agent_tasks"\)\.update/);
+});
