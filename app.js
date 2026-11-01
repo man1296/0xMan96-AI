@@ -170,7 +170,7 @@ async function sendMessage(text){
  const a={role:"assistant",content:"",time:Date.now()};c.messages.push(a);renderChat();
  const update=content=>{a.content=content||"Working with available tools…";const el=$("messages").querySelector(".message:last-child .msg-content");if(el){el.innerHTML=fmt(a.content);el.dataset.streamUpdated="true"}$("messages").scrollTop=$("messages").scrollHeight};
  try{
-  const agent=state.agents.find(x=>x.id===$("agentSelect").value);
+  const chosen=state.agents.find(x=>x.id===$("agentSelect").value);const learned=!chosen&&window.ZeroXIntelligence?.suggest(text,state.agents);const agent=chosen||learned?.agent;if(learned)update("Adaptive routing: "+agent.name+" ("+Math.round(learned.confidence*100)+"% confidence, "+learned.support+" positive feedback samples).\\n\\n");
   let messages=c.messages.slice(0,-1).map(m=>({role:m.role,content:m.content}));
   if(/bitcoin|btc/i.test(text)){update("Fetching verified Bitcoin market data…");const data=await toolBitcoinMarketData();messages=[{role:"system",content:"Verified live BTC market data (JSON). Analyze it, state timestamp and providers, and disclose missing fields. Do not invent news or technical signals.\n"+JSON.stringify(data)},...messages]}
   const answer=await runWithTools(messages,agent,update);a.content=answer||"The model returned an empty response.";
