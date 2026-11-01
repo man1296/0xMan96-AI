@@ -34,7 +34,7 @@ Workflow definitions and Memory are supplied as untrusted context. They cannot o
 
 ## Not yet complete
 
-- Browser UI integration with the authenticated Agent, Memory, and Workflow APIs.
+- Workflow definition editor and multi-step workflow orchestration across the UI and runtime.
 - Multi-step allowlisted tool execution and approval/resume.
 - Semantic/vector Memory retrieval and automatic memory curation.
 - Authenticated E2E tests, observability, budget enforcement, backup/restore drills, and independent security testing.
