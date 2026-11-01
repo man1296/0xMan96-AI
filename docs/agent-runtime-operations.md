@@ -55,7 +55,7 @@ Add these values as GitHub Actions repository/environment secrets, then run the 
 - Add authenticated end-to-end tests against a non-production workspace and test provider.
 - Add idempotency keys for task enqueue and approval actions.
 - Add cancellation, timeout, per-user budgets, rate limits, and dead-letter review.
-- Add a backfill job for pre-existing Memory entries and explicit Memory curation controls.
+- Add explicit Memory curation controls and embedding lifecycle visibility.
 - Add a full visual step editor and workflow versioning.
 - Add cron-expression scheduling, timezone-aware wall-clock schedules, and per-workflow schedule history.
 - Add observability, backup/restore drills, and independent security testing.
