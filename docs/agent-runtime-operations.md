@@ -2,39 +2,54 @@
 
 ## Current scope
 
-The scheduled Worker invokes the internal Agent runtime once per minute. The runtime atomically claims up to three queued tasks from Supabase, loads workspace Agent instructions and recent Memory, calls the configured OpenRouter model, and persists the result and Workflow run status.
+The scheduled Cloudflare Worker invokes the authenticated internal Agent runtime every minute. The runtime atomically claims up to three queued tasks from Supabase, loads workspace Agent instructions and relevant Memory, executes a bounded Workflow, and persists task, Workflow-run, and step-run results.
 
-The database remains the source of truth. The `claim_agent_tasks` RPC uses row locks with `SKIP LOCKED`, a five-minute lease, and a bounded attempt count. Expired leases are recovered on the next worker tick. Retry delays use bounded exponential backoff.
+The database remains the source of truth. The queue RPC uses row locks with `SKIP LOCKED`, five-minute leases, bounded attempts, and stale-lease recovery.
+
+## Workflow execution
+
+Workflow definitions contain at most six ordered steps. The server validates every step against a strict allowlist:
+
+- `agent.reason`: call the configured OpenRouter model for a bounded reasoning/drafting step.
+- `memory.search`: search the current workspace's saved Memory.
+- `memory.save`: save a Memory entry after explicit user approval.
+
+No arbitrary code, shell commands, unrestricted HTTP, browser automation, publishing, wallet signing, financial transactions, or external account mutations are exposed by this runtime. Unknown tool names are rejected. Workflow content and Memory are treated as untrusted data, not system instructions.
+
+Every step is persisted in `workflow_step_runs`. Steps requiring approval pause the task and set `awaiting_approval`. The authenticated approval endpoint can approve and resume or reject the pending task. Approval is bound to the task owner and exact Workflow run. Memory writes always require approval, even if a client attempts to mark them as approval-free.
+
+The Workspace UI includes a Workflow library and a pending-approval panel. Its current editor creates sequential reasoning steps; the server registry also supports Memory search and approval-gated Memory writes for workflows submitted through the API.
 
 ## Required Cloudflare runtime secrets
 
 Configure these as Worker secrets, never as plaintext vars:
 
-- `OPENROUTER_API_KEY`: provider credential already used by the chat proxy.
+- `OPENROUTER_API_KEY`: provider credential.
 - `SUPABASE_SERVICE_ROLE_KEY`: server-only Supabase service role key. Never expose it to the browser.
-- `AGENT_WORKER_SECRET`: a long random secret shared by the scheduled Worker and the internal endpoint.
+- `AGENT_WORKER_SECRET`: long random secret shared by the scheduled Worker and the internal endpoint.
 
-`npm run deploy` installs the OpenRouter key and installs the two Agent runtime secrets when supplied to the build environment. If either Agent secret is absent, scheduled processing intentionally remains disabled. After configuring secrets, deploy a new Worker version and verify `/__runtime-binding-check` reports only boolean presence.
+After configuring secrets, deploy a new Worker version and verify `/__runtime-binding-check` reports only boolean presence. The diagnostic never returns secret values.
 
-## Security and execution boundary
+## Security and operational verification
 
-The internal endpoint accepts only the shared worker secret and uses the service-role client server-side. The service role is never returned to the client. The worker only performs model reasoning and persistence. It does not execute arbitrary code, browser actions, external integrations, transactions, publishing, or other side effects. Such actions must be implemented through a server-side allowlisted tool registry with per-tool authorization and approval-resume handling.
+1. Confirm all three secrets are configured in Cloudflare.
+2. Deploy the Worker and verify the scheduled trigger.
+3. Confirm the binding diagnostic reports service-role and worker-secret presence.
+4. Enqueue a harmless task in an authenticated workspace.
+5. Confirm task state transitions to `succeeded` and the Workflow run plus step history are persisted.
+6. Test a `memory.save` step: it must pause at `awaiting_approval`; approve it in the UI and confirm the worker resumes.
+7. Reject a pending approval and confirm the task is cancelled.
+8. Confirm the internal endpoint rejects missing and incorrect worker secrets.
+9. Monitor Worker logs, provider spend, Supabase Security Advisor, and database backups.
 
-Workflow definitions and Memory are supplied as untrusted context. They cannot override the runtime system policy. No claim of full autonomous tool execution is made by this milestone.
+## Remaining before production
 
-## Operational verification
+- Add authenticated end-to-end tests against a non-production workspace and test provider.
+- Add idempotency keys for task enqueue and approval actions.
+- Add cancellation, timeout, per-user budgets, rate limits, and dead-letter review.
+- Add semantic/vector Memory retrieval and explicit Memory curation controls.
+- Add a full visual step editor and workflow versioning.
+- Add observability, backup/restore drills, and independent security testing.
+- Deploy the latest branch and perform a real authenticated Cloudflare smoke test.
 
-1. Set the three runtime secrets in Cloudflare and deploy.
-2. Confirm the binding diagnostic reports `serviceRoleKey` and `agentWorkerSecret` as present.
-3. Enqueue a harmless task in an authenticated workspace.
-4. Confirm it transitions `queued -> planning -> succeeded` and its Workflow run is completed.
-5. Confirm a failed provider request is retried and an expired lease is recovered.
-6. Confirm the endpoint rejects missing and incorrect worker secrets.
-7. Monitor Cloudflare Worker logs and Supabase Security Advisor before public rollout.
-
-## Not yet complete
-
-- Workflow definition editor and multi-step workflow orchestration across the UI and runtime.
-- Multi-step allowlisted tool execution and approval/resume.
-- Semantic/vector Memory retrieval and automatic memory curation.
-- Authenticated E2E tests, observability, budget enforcement, backup/restore drills, and independent security testing.
+This milestone provides bounded background reasoning and approval-gated internal Memory writes. It is not a claim of unrestricted autonomous execution or production readiness.
