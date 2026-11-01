@@ -434,7 +434,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
                 </article>)}
               </div>
             </section>
-          )}}
+          )}
         </>
       )}
       <footer style={{ ...muted, marginTop: 22, fontSize: 11, lineHeight: 1.6 }}>
