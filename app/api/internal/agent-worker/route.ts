@@ -82,14 +82,14 @@ async function executeTask(
 ): Promise<"succeeded" | "awaiting_approval"> {
   const [agentResult, memoryResult, workflowResult, runResult] = await Promise.all([
     task.agent_id
-      ? supabase.from("agents").select("name,instructions,config").eq("id", task.agent_id).eq("workspace_id", task.workspace_id).maybeSingle()
+      ? supabase.from("agents").select("name,instructions,config").eq("id", task.agent_id).eq("workspace_id", task.workspace_id).eq("user_id", task.user_id).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     supabase.from("agent_memories").select("category,content,importance,pinned")
-      .eq("workspace_id", task.workspace_id).order("pinned", { ascending: false })
+      .eq("workspace_id", task.workspace_id).eq("user_id", task.user_id).order("pinned", { ascending: false })
       .order("importance", { ascending: false }).order("updated_at", { ascending: false }).limit(30),
     task.workflow_id
       ? supabase.from("workflow_definitions").select("name,description,steps")
-          .eq("id", task.workflow_id).eq("workspace_id", task.workspace_id).eq("enabled", true).maybeSingle()
+          .eq("id", task.workflow_id).eq("workspace_id", task.workspace_id).eq("user_id", task.user_id).eq("enabled", true).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     supabase.from("workflow_runs").select("id,status").eq("agent_task_id", task.id).maybeSingle()
   ]);
@@ -183,7 +183,7 @@ async function executeTask(
     } else if (step.tool === "memory.search") {
       const query = String(step.input.query).replace(/[%,_]/g, " ").trim();
       const { data, error } = await supabase.from("agent_memories")
-        .select("id,category,content,importance,pinned").eq("workspace_id", task.workspace_id)
+        .select("id,category,content,importance,pinned").eq("workspace_id", task.workspace_id).eq("user_id", task.user_id)
         .ilike("content", "%" + query + "%").order("importance", { ascending: false }).limit(10);
       if (error) throw new Error("memory_search_failed");
       output = data ?? [];
