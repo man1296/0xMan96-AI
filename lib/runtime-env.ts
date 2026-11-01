@@ -1,7 +1,7 @@
-import { env as cloudflareEnv } from "cloudflare:workers";
+import { env as nodeEnv } from "node:process";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-export type RuntimeEnvSource = "process_env" | "cloudflare_workers" | "open_next_context" | "missing";
+export type RuntimeEnvSource = "process_env" | "open_next_context" | "missing";
 
 export interface RuntimeEnvResult {
   value: string | undefined;
@@ -9,38 +9,31 @@ export interface RuntimeEnvResult {
 }
 
 /**
- * Read server-side configuration from the Cloudflare Worker runtime.
- * Prefer Cloudflare's official global env binding for secrets, then process.env
- * for compatibility, then the OpenNext request context for ordinary bindings.
- * Never log or expose returned secret values.
+ * Read server-side configuration at request time.
+ * Use node:process with a dynamic key to avoid Next.js build-time replacement
+ * of process.env.KEY expressions. Public NEXT_PUBLIC values use literal
+ * accesses because Next.js may inline them during compilation.
  */
-function readProcessEnv(name: string): string | undefined {
+function readRuntimeProcessEnv(name: string): string | undefined {
   switch (name) {
     case "OPENROUTER_API_KEY":
-      return process.env["OPENROUTER_API_KEY"];
     case "OPENROUTER_DEFAULT_MODEL":
-      return process.env["OPENROUTER_DEFAULT_MODEL"];
     case "OPENROUTER_BASE_URL":
-      return process.env["OPENROUTER_BASE_URL"];
+      return nodeEnv[name];
     case "NEXT_PUBLIC_SUPABASE_URL":
-      return process.env["NEXT_PUBLIC_SUPABASE_URL"];
+      return process.env.NEXT_PUBLIC_SUPABASE_URL;
     case "NEXT_PUBLIC_SUPABASE_ANON_KEY":
-      return process.env["NEXT_PUBLIC_SUPABASE_ANON_KEY"];
+      return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     case "NEXT_PUBLIC_APP_URL":
-      return process.env["NEXT_PUBLIC_APP_URL"];
+      return process.env.NEXT_PUBLIC_APP_URL;
     default:
       return undefined;
   }
 }
 
 export async function readRuntimeEnv(name: string): Promise<RuntimeEnvResult> {
-  const cloudflareValue = cloudflareEnv[name];
-  if (typeof cloudflareValue === "string" && cloudflareValue.length > 0) {
-    return { value: cloudflareValue, source: "cloudflare_workers" };
-  }
-
-  const runtimeValue = readProcessEnv(name);
-  if (runtimeValue && runtimeValue.length > 0) {
+  const runtimeValue = readRuntimeProcessEnv(name);
+  if (typeof runtimeValue === "string" && runtimeValue.length > 0) {
     return { value: runtimeValue, source: "process_env" };
   }
 
