@@ -428,7 +428,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
                 <label style={{ fontSize: 12, ...muted }} htmlFor="workflow-steps">Steps, one instruction per line (max 6)</label>
                 <textarea id="workflow-steps" value={workflowStepsText} onChange={event => setWorkflowStepsText(event.target.value)} rows={8} maxLength={12000} required style={{ width: "100%", boxSizing: "border-box", background: "#0c0e16", border: "1px solid #393d52", borderRadius: 10, padding: 12, color: "#f5f3ff", font: "inherit" }} />
                 <button type="submit" disabled={savingWorkflow || !workflowName.trim()} style={{ ...button, background: "#a98bf4", borderColor: "#a98bf4", color: "#171320", fontWeight: 800 }}>{savingWorkflow ? "Saving…" : "Save workflow"}</button>
-                <p style={{ ...muted, fontSize: 11, lineHeight: 1.5, margin: 0 }}>Scheduled workflows enqueue a run automatically at the selected interval. You can pause or resume them from the library. Memory writes always require approval.</p>
+                <p style={{ ...muted, fontSize: 11, lineHeight: 1.5, margin: 0 }}>Scheduled workflows enqueue a run automatically at the selected interval. You can pause or resume them from the library; at most five active schedules are allowed per user in this Workspace, and overlapping runs are held back. Memory writes always require approval.</p>
               </form>
             </section>
           )}
