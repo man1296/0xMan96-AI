@@ -1,3 +1,4 @@
+import { env as nodeEnv } from "node:process";
 import { NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { readRuntimeEnv } from "@/lib/runtime-env";
@@ -7,9 +8,9 @@ export const dynamic = "force-dynamic";
 
 function getRuntimeDiagnostics() {
   const processEnv = {
-    supabaseUrl: Boolean(process.env["NEXT_PUBLIC_SUPABASE_URL"]),
-    supabaseAnonKey: Boolean(process.env["NEXT_PUBLIC_SUPABASE_ANON_KEY"]),
-    openRouterApiKey: Boolean(process.env.OPENROUTER_API_KEY)
+    supabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    supabaseAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    openRouterApiKey: typeof nodeEnv["OPENROUTER_API_KEY"] === "string" && nodeEnv["OPENROUTER_API_KEY"].length > 0
   };
 
   let openNextContext: {
