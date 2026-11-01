@@ -42,6 +42,13 @@ async function constantTimeMatch(left: string, right: string): Promise<boolean> 
   return diff === 0;
 }
 
+async function fingerprintStep(step: WorkflowStep): Promise<string> {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify({
+    id: step.id, name: step.name, tool: step.tool, input: step.input, requiresApproval: step.requiresApproval
+  })));
+  return [...new Uint8Array(bytes)].map(value => value.toString(16).padStart(2, "0")).join("");
+}
+
 async function callModel(apiKey: string, model: string, baseUrl: string, appUrl: string, system: string, prompt: string): Promise<string> {
   const gateway = new URL(baseUrl);
   if (gateway.protocol !== "https:" || gateway.hostname !== "openrouter.ai") {
@@ -142,7 +149,8 @@ async function executeTask(
     }
 
     const approval = task.approval && typeof task.approval === "object" ? task.approval : {};
-    const approved = approval.decision === "approved" && Number(approval.pending_step_index) === index;
+    const stepFingerprint = await fingerprintStep(step);
+    const approved = approval.decision === "approved" && Number(approval.pending_step_index) === index && approval.step_fingerprint === stepFingerprint;
     if (step.requiresApproval && !approved) {
       const row = {
         run_id: runId, workspace_id: task.workspace_id, user_id: task.user_id, step_index: index,
@@ -156,7 +164,14 @@ async function executeTask(
       const now = new Date().toISOString();
       const { error: taskError } = await supabase.from("agent_tasks").update({
         status: "awaiting_approval",
-        approval: { pending_step_index: index, step_name: step.name, tool: step.tool, summary: step.name + " requires your approval." },
+        approval: {
+          pending_step_index: index, step_name: step.name, tool: step.tool, step_fingerprint: stepFingerprint,
+          summary: (step.tool === "memory.save"
+            ? "Save Memory (" + String(step.input.category) + "): " + String(step.input.content)
+            : step.tool === "memory.search"
+              ? "Search saved Memory for: " + String(step.input.query)
+              : "Run model step: " + String(step.input.prompt)).slice(0, 700)
+        },
         lease_expires_at: null, updated_at: now
       }).eq("id", task.id);
       if (taskError) throw new Error("approval_state_persist_failed");
@@ -250,19 +265,17 @@ export async function POST(request: Request) {
   });
   const { error: recoveryError } = await supabase.rpc("recover_expired_agent_tasks");
   if (recoveryError) return NextResponse.json({ error: "task_recovery_failed" }, { status: 503 });
-  const { data: tasks, error: claimError } = await supabase.rpc("claim_agent_tasks", { p_limit: 3 });
+  const { data: tasks, error: claimError } = await supabase.rpc("claim_agent_tasks", { p_limit: 2 });
   if (claimError) return NextResponse.json({ error: "task_claim_failed" }, { status: 503 });
 
-  const summary = { claimed: (tasks ?? []).length, succeeded: 0, awaitingApproval: 0, failed: 0 };
-  for (const task of (tasks ?? []) as AgentTask[]) {
+  const claimedTasks = (tasks ?? []) as AgentTask[];
+  const outcomes = await Promise.all(claimedTasks.map(async task => {
     try {
-      const result = await executeTask(
+      return await executeTask(
         supabase, task, apiKey, configuredModel || "openrouter/free",
         configuredBase || "https://openrouter.ai/api/v1",
         appUrl || "https://man1296.github.io/0xMan96-AI/"
       );
-      if (result === "succeeded") summary.succeeded++;
-      else summary.awaitingApproval++;
     } catch (error) {
       const message = error instanceof Error ? error.message : "task_execution_failed";
       const terminal = task.attempts >= task.max_attempts;
@@ -276,8 +289,14 @@ export async function POST(request: Request) {
       await supabase.from("workflow_runs").update({
         status: terminal ? "failed" : "queued", completed_at: terminal ? now : null
       }).eq("agent_task_id", task.id);
-      summary.failed++;
+      return "failed" as const;
     }
-  }
+  }));
+  const summary = {
+    claimed: claimedTasks.length,
+    succeeded: outcomes.filter(result => result === "succeeded").length,
+    awaitingApproval: outcomes.filter(result => result === "awaiting_approval").length,
+    failed: outcomes.filter(result => result === "failed").length
+  };
   return NextResponse.json(summary, { headers: { "Cache-Control": "no-store" } });
 }
