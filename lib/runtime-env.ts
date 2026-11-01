@@ -8,13 +8,31 @@ export interface RuntimeEnvResult {
 }
 
 /**
- * Cloudflare runtime variables and Secrets are exposed through process.env
- * when nodejs_compat_populate_process_env is enabled. OpenNext context is
- * retained as a fallback for actual Worker bindings and local adapters.
- * Never log or expose the returned secret value.
+ * Read server-side configuration from the Cloudflare Worker runtime.
+ * Use an explicit property access for the OpenRouter secret so the access
+ * matches Cloudflare's documented process.env pattern. Keep dynamic access
+ * for NEXT_PUBLIC_* values to avoid Next.js build-time inlining.
+ * Never log or expose returned secret values.
  */
+function readProcessEnv(name: string): string | undefined {
+  switch (name) {
+    case "OPENROUTER_API_KEY":
+      return process.env.OPENROUTER_API_KEY;
+    case "OPENROUTER_DEFAULT_MODEL":
+      return process.env.OPENROUTER_DEFAULT_MODEL;
+    case "OPENROUTER_BASE_URL":
+      return process.env.OPENROUTER_BASE_URL;
+    case "NEXT_PUBLIC_SUPABASE_URL":
+    case "NEXT_PUBLIC_SUPABASE_ANON_KEY":
+    case "NEXT_PUBLIC_APP_URL":
+      return process.env[name];
+    default:
+      return process.env[name];
+  }
+}
+
 export async function readRuntimeEnv(name: string): Promise<RuntimeEnvResult> {
-  const runtimeValue = process.env[name];
+  const runtimeValue = readProcessEnv(name);
   if (runtimeValue && runtimeValue.length > 0) {
     return { value: runtimeValue, source: "process_env" };
   }
