@@ -12,7 +12,8 @@ const schema = z.object({
   agentId: z.string().uuid().optional(),
   name: z.string().trim().min(1).max(160),
   description: z.string().trim().max(2000).optional(),
-  steps: z.array(z.unknown()).max(6)
+  steps: z.array(z.unknown()).max(6),
+  scheduleInterval: z.enum(["hourly", "daily", "weekly"]).optional()
 }).strict();
 
 export async function GET(request: Request) {
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "invalid_workspace_id" }, { status: 400 });
   }
   const { data, error: queryError } = await supabase.from("workflow_definitions")
-    .select("id,agent_id,name,description,trigger_type,steps,enabled,created_at,updated_at")
+    .select("id,agent_id,name,description,trigger_type,trigger_config,steps,enabled,next_run_at,last_triggered_at,created_at,updated_at")
     .eq("workspace_id", workspaceId).order("updated_at", { ascending: false }).limit(100);
   if (queryError) return NextResponse.json({ error: "workflow_query_failed" }, { status: 400 });
   return NextResponse.json({ workflows: data });
@@ -52,8 +53,14 @@ export async function POST(request: Request) {
   }
   const { data, error: insertError } = await supabase.from("workflow_definitions").insert({
     workspace_id: value.workspaceId, user_id: user.id, agent_id: value.agentId ?? null,
-    name: value.name, description: value.description ?? "", trigger_type: "manual", steps
-  }).select("id,name,description,steps,enabled,created_at").single();
+    name: value.name, description: value.description ?? "",
+    trigger_type: value.scheduleInterval ? "schedule" : "manual",
+    trigger_config: value.scheduleInterval ? { interval: value.scheduleInterval } : {},
+    next_run_at: value.scheduleInterval
+      ? new Date(Date.now() + (value.scheduleInterval === "hourly" ? 3600000 : value.scheduleInterval === "daily" ? 86400000 : 604800000)).toISOString()
+      : null,
+    steps
+  }).select("id,name,description,trigger_type,trigger_config,steps,enabled,next_run_at,last_triggered_at,created_at").single();
   if (insertError) return NextResponse.json({ error: "workflow_create_failed" }, { status: 400 });
   return NextResponse.json({ workflow: data }, { status: 201 });
 }
