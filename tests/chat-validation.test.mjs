@@ -22,6 +22,9 @@ test("rejects empty and excessive conversation context", () => {
 test("rejects unapproved models to prevent arbitrary provider spend", () => {
   assert.equal(chatRequestSchema.safeParse({ messages: [{ role: "user", content: "hi" }], model: "some/unknown-model" }).success, false);
 });
-test("accepts an explicitly approved quality model", () => {
-  assert.equal(chatRequestSchema.safeParse({ messages: [{ role: "user", content: "hi" }], model: "qwen/qwen3.8-max" }).success, true);
+test("accepts the free OpenRouter router", () => {
+  assert.equal(chatRequestSchema.safeParse({ messages: [{ role: "user", content: "hi" }], model: "openrouter/free" }).success, true);
+});
+test("rejects paid models while free-only mode is enabled", () => {
+  assert.equal(chatRequestSchema.safeParse({ messages: [{ role: "user", content: "hi" }], model: "qwen/qwen3.8-max" }).success, false);
 });
