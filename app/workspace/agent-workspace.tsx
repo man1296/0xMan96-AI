@@ -4,10 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 
 type Agent = { id: string; name: string; description?: string; instructions?: string };
+type Workflow = { id: string; name: string; description?: string; steps: Array<{ name: string; tool: string; input: Record<string, unknown>; requiresApproval: boolean }> };
 type AgentTask = {
   id: string;
   task: string;
   status: string;
+  approval?: { summary?: string; pending_step_index?: number; tool?: string } | null;
   attempts?: number;
   results?: Array<{ type?: string; content?: string }>;
   last_error?: string | null;
@@ -28,7 +30,7 @@ const panel: CSSProperties = {
   borderRadius: 16,
   padding: 18
 };
-const muted: React.CSSProperties = { color: "#9a9db0" };
+const muted: CSSProperties = { color: "#9a9db0" };
 const button: React.CSSProperties = {
   border: "1px solid #393d52",
   borderRadius: 10,
@@ -52,10 +54,15 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
   workspaceName: string;
   userEmail: string;
 }) {
-  const [tab, setTab] = useState<"chat" | "memory" | "runs">("chat");
+  const [tab, setTab] = useState<"chat" | "memory" | "workflows" | "runs">("chat");
   const [agents, setAgents] = useState<Agent[]>([]);
   const [tasks, setTasks] = useState<AgentTask[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
+  const [workflowName, setWorkflowName] = useState("");
+  const [workflowStepsText, setWorkflowStepsText] = useState("Research the task and identify reliable sources.\nSynthesize the findings into a clear final answer.");
+  const [savingWorkflow, setSavingWorkflow] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [memoryText, setMemoryText] = useState("");
   const [memoryCategory, setMemoryCategory] = useState("project_context");
@@ -73,6 +80,12 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
     const response = await fetch("/api/v1/agent/tasks?workspaceId=" + encodeURIComponent(workspaceId), { cache: "no-store" });
     const data = await readJson<{ tasks: AgentTask[] }>(response);
     setTasks(data.tasks ?? []);
+  }, [workspaceId]);
+
+  const loadWorkflows = useCallback(async () => {
+    const response = await fetch("/api/v1/workflows?workspaceId=" + encodeURIComponent(workspaceId), { cache: "no-store" });
+    const data = await readJson<{ workflows: Workflow[] }>(response);
+    setWorkflows(data.workflows ?? []);
   }, [workspaceId]);
 
   const loadMemories = useCallback(async () => {
@@ -108,7 +121,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
       setLoading(true);
       setError("");
       try {
-        await Promise.all([loadAgents(), loadTasks(), loadMemories()]);
+        await Promise.all([loadAgents(), loadTasks(), loadMemories(), loadWorkflows()]);
       } catch (err) {
         if (alive) setError(err instanceof Error ? err.message : "workspace_load_failed");
       } finally {
@@ -117,7 +130,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
     }
     void initialize();
     return () => { alive = false; };
-  }, [loadAgents, loadTasks, loadMemories]);
+  }, [loadAgents, loadTasks, loadMemories, loadWorkflows]);
 
   useEffect(() => {
     if (!activeTasks) return;
@@ -137,7 +150,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
       const response = await fetch("/api/v1/agent/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workspaceId, agentId: agents[0]?.id, task: taskText })
+        body: JSON.stringify({ workspaceId, agentId: agents[0]?.id, workflowId: selectedWorkflowId || undefined, task: taskText })
       });
       const data = await readJson<{ task: { id: string; status: string; created_at: string } }>(response);
       setPrompt("");
@@ -154,6 +167,55 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
       setError(err instanceof Error ? err.message : "task_enqueue_failed");
     } finally {
       setSending(false);
+    }
+  }
+
+  async function createWorkflow(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const lines = workflowStepsText.split("\n").map(line => line.trim()).filter(Boolean);
+    if (!workflowName.trim() || !lines.length || savingWorkflow) return;
+    setSavingWorkflow(true);
+    setError("");
+    try {
+      const response = await fetch("/api/v1/workflows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId,
+          agentId: agents[0]?.id,
+          name: workflowName.trim(),
+          description: "User-defined sequential Agent workflow.",
+          steps: lines.slice(0, 6).map((prompt, index) => ({
+            id: "step-" + (index + 1),
+            name: "Step " + (index + 1),
+            tool: "agent.reason",
+            input: { prompt },
+            requiresApproval: false
+          }))
+        })
+      });
+      const data = await readJson<{ workflow: Workflow }>(response);
+      setWorkflowName("");
+      await loadWorkflows();
+      setSelectedWorkflowId(data.workflow.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "workflow_create_failed");
+    } finally {
+      setSavingWorkflow(false);
+    }
+  }
+
+  async function decideApproval(taskId: string, approved: boolean) {
+    setError("");
+    try {
+      await readJson(await fetch("/api/v1/agent/tasks/" + encodeURIComponent(taskId) + "/approval", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approved })
+      }));
+      await loadTasks();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "approval_update_failed");
     }
   }
 
@@ -188,6 +250,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
   const tabs = [
     { id: "chat" as const, label: "Agent" },
     { id: "memory" as const, label: "Memory" },
+    { id: "workflows" as const, label: "Workflows" },
     { id: "runs" as const, label: "Workflow runs" }
   ];
 
@@ -239,12 +302,14 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
                           {result.content}
                         </div>
                       ) : null)}
+                      {task.status === "awaiting_approval" && <div style={{ marginTop: 12, padding: 12, borderRadius: 10, border: "1px solid #8b6a35", background: "#2a2115" }}><strong style={{ color: "#f4cf8b", fontSize: 12 }}>Approval required</strong><p style={{ color: "#dfd0b4", fontSize: 12, lineHeight: 1.5 }}>{task.approval?.summary || "This workflow step needs your approval before it can continue."}</p><div style={{ display: "flex", gap: 8 }}><button type="button" onClick={() => void decideApproval(task.id, true)} style={{ ...button, background: "#a98bf4", color: "#171320", fontWeight: 700 }}>Approve & resume</button><button type="button" onClick={() => void decideApproval(task.id, false)} style={button}>Reject</button></div></div>}
                       {task.last_error && <p style={{ color: "#ffaaaa", fontSize: 12, marginBottom: 0 }}>Error: {task.last_error}</p>}
                     </article>
                   ))}
                 </div>
                 <form onSubmit={submitTask} style={{ display: "grid", gap: 10 }}>
                   <textarea value={prompt} onChange={event => setPrompt(event.target.value)} maxLength={12000} rows={3} placeholder="Give the Agent a task…" style={{ width: "100%", resize: "vertical", boxSizing: "border-box", background: "#0c0e16", border: "1px solid #393d52", borderRadius: 12, padding: 14, color: "#f5f3ff", font: "inherit" }} />
+                  <select aria-label="Workflow" value={selectedWorkflowId} onChange={event => setSelectedWorkflowId(event.target.value)} style={{ background: "#0c0e16", border: "1px solid #393d52", borderRadius: 9, padding: 10, color: "#f5f3ff" }}><option value="">Default Agent task</option>{workflows.map(workflow => <option key={workflow.id} value={workflow.id}>{workflow.name}</option>)}</select>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                     <span style={{ ...muted, fontSize: 11 }}>{agents[0]?.name ?? "Agent"} · background execution</span>
                     <button disabled={sending || !prompt.trim()} type="submit" style={{ ...button, background: "#a98bf4", borderColor: "#a98bf4", color: "#171320", fontWeight: 800, opacity: sending || !prompt.trim() ? .55 : 1 }}>{sending ? "Queueing…" : "Run task"}</button>
@@ -308,6 +373,33 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
             </section>
           )}
 
+          {tab === "workflows" && (
+            <section style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 16 }}>
+              <div style={panel}>
+                <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>Workflow library</h2>
+                <p style={{ ...muted, margin: "0 0 16px", fontSize: 13 }}>Create reusable, sequential Agent workflows. Each workflow is limited to six allowlisted steps.</p>
+                <div style={{ display: "grid", gap: 10 }}>
+                  {!workflows.length && <p style={muted}>No workflows created yet.</p>}
+                  {workflows.map(workflow => <article key={workflow.id} style={{ background: "#0c0e16", border: "1px solid #2c3041", borderRadius: 10, padding: 13 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}><strong>{workflow.name}</strong><span style={{ ...muted, fontSize: 11 }}>{workflow.steps?.length ?? 0} steps</span></div>
+                    <p style={{ ...muted, fontSize: 12, lineHeight: 1.5 }}>{workflow.description || "Sequential Agent workflow"}</p>
+                    <ol style={{ paddingLeft: 20, marginBottom: 0, fontSize: 12, lineHeight: 1.7 }}>{workflow.steps?.map((step, index) => <li key={step.name + index}>{step.name}: {String(step.input?.prompt ?? step.tool)}</li>)}</ol>
+                    <button type="button" onClick={() => { setSelectedWorkflowId(workflow.id); setTab("chat"); }} style={{ ...button, marginTop: 12 }}>Use workflow</button>
+                  </article>)}
+                </div>
+              </div>
+              <form onSubmit={createWorkflow} style={{ ...panel, display: "grid", gap: 12, alignContent: "start" }}>
+                <h3 style={{ margin: 0, fontSize: 16 }}>Create workflow</h3>
+                <label style={{ fontSize: 12, ...muted }} htmlFor="workflow-name">Workflow name</label>
+                <input id="workflow-name" value={workflowName} onChange={event => setWorkflowName(event.target.value)} maxLength={160} required placeholder="Research and summarize" style={{ background: "#0c0e16", border: "1px solid #393d52", borderRadius: 9, padding: 10, color: "#f5f3ff" }} />
+                <label style={{ fontSize: 12, ...muted }} htmlFor="workflow-steps">Steps, one instruction per line (max 6)</label>
+                <textarea id="workflow-steps" value={workflowStepsText} onChange={event => setWorkflowStepsText(event.target.value)} rows={8} maxLength={12000} required style={{ width: "100%", boxSizing: "border-box", background: "#0c0e16", border: "1px solid #393d52", borderRadius: 10, padding: 12, color: "#f5f3ff", font: "inherit" }} />
+                <button type="submit" disabled={savingWorkflow || !workflowName.trim()} style={{ ...button, background: "#a98bf4", borderColor: "#a98bf4", color: "#171320", fontWeight: 800 }}>{savingWorkflow ? "Saving…" : "Save workflow"}</button>
+                <p style={{ ...muted, fontSize: 11, lineHeight: 1.5, margin: 0 }}>Current workflow editor creates reasoning steps. Memory search/save are available to the server runtime as allowlisted tools and approval is mandatory for memory writes.</p>
+              </form>
+            </section>
+          )}
+
           {tab === "runs" && (
             <section style={panel}>
               <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>Workflow execution history</h2>
@@ -331,7 +423,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
         </>
       )}
       <footer style={{ ...muted, marginTop: 22, fontSize: 11, lineHeight: 1.6 }}>
-        Background Agent processing requires the Cloudflare runtime secrets and deployment described in the operations guide. External tools and side effects are not enabled by this milestone.
+        Background execution runs up to six allowlisted steps. Memory writes require explicit approval. Arbitrary code, publishing, financial transactions and unrestricted external tools are not available.
       </footer>
     </main>
   );
