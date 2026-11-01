@@ -28,6 +28,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const { data: task, error: taskError } = await admin.from("agent_tasks")
     .select("id,workspace_id,status,approval").eq("id", id).eq("user_id", user.id).maybeSingle();
   if (taskError || !task) return NextResponse.json({ error: "task_not_found" }, { status: 404 });
+  const { data: workspace } = await supabase.from("workspaces").select("id").eq("id", task.workspace_id).maybeSingle();
+  if (!workspace) return NextResponse.json({ error: "workspace_access_denied" }, { status: 403 });
   if (task.status !== "awaiting_approval") {
     return NextResponse.json({ error: "task_not_awaiting_approval" }, { status: 409 });
   }
