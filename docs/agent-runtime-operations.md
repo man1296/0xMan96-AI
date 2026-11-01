@@ -8,7 +8,7 @@ The database remains the source of truth. The queue RPC uses row locks with `SKI
 
 ## Workflow execution
 
-Workflow definitions contain at most six ordered steps. The server validates every step against a strict allowlist:
+When a user starts a task without selecting a saved Workflow, the configured model first proposes a plan of up to six steps. The server parses and validates that plan, persists it before execution, and falls back to a single reasoning step if the proposed JSON is invalid. Saved Workflow definitions also contain at most six ordered steps. The server validates every step against a strict allowlist:
 
 - `agent.reason`: call the configured OpenRouter model for a bounded reasoning/drafting step.
 - `memory.search`: search the current workspace's saved Memory.
