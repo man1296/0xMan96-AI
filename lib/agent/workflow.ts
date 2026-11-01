@@ -13,7 +13,7 @@ export type WorkflowStep = {
 const ALLOWED_TOOLS = new Set<WorkflowTool>(["agent.reason", "memory.search", "memory.save"]);
 
 export function validateWorkflowSteps(value: unknown): WorkflowStep[] {
-  if (!Array.isArray(value) || value.length > MAX_WORKFLOW_STEPS) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_WORKFLOW_STEPS) {
     throw new Error("workflow_steps_must_be_array_of_at_most_six");
   }
   return value.map((raw, index) => {
@@ -43,7 +43,7 @@ export function validateWorkflowSteps(value: unknown): WorkflowStep[] {
     }
     if (tool === "memory.search") {
       const query = (input as Record<string, unknown>).query;
-      if (typeof query !== "string" || !query.trim() || query.length > 300) {
+      if (typeof query !== "string" || !query.replace(/[%,_]/g, " ").trim() || query.length > 300) {
         throw new Error("memory_search_requires_query");
       }
     }
