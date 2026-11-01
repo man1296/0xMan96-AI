@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const migration = await readFile(new URL("../supabase/migrations/20261102120000_durable_agent_runtime.sql", import.meta.url), "utf8");
+const migration = await readFile(new URL("../supabase/migrations/20261101191540_durable_agent_runtime.sql", import.meta.url), "utf8");
 const route = await readFile(new URL("../app/api/internal/agent-worker/route.ts", import.meta.url), "utf8");
 const worker = await readFile(new URL("../custom-worker.ts", import.meta.url), "utf8");
 const wrangler = await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8");
