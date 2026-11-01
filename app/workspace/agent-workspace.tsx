@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CSSProperties, FormEvent } from "react";
 
 type Agent = { id: string; name: string; description?: string; instructions?: string };
 type AgentTask = {
@@ -21,7 +22,7 @@ type Memory = {
   updated_at?: string;
 };
 
-const panel: React.CSSProperties = {
+const panel: CSSProperties = {
   background: "#11131d",
   border: "1px solid #272a39",
   borderRadius: 16,
