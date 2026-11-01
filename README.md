@@ -11,7 +11,8 @@ The existing static HTML/CSS/JavaScript workspace remains available on GitHub Pa
 - Next.js App Router, Supabase Auth SSR, PostgreSQL, row-level security and private Storage.
 - Multi-tenant schema for profiles, workspaces, conversations, messages, knowledge documents, creator projects, generation jobs, audit events and API rate limits.
 - Authenticated, validated, database-rate-limited OpenRouter streaming proxy.
-- Quality-first model defaults: Anthropic Claude Opus 5, with Qwen3.8 Max and Meta Muse Spark fallback candidates.
+- Free-first AI default: OpenRouter's `openrouter/free` router. It selects from currently available free models; availability and provider rate limits can change.
+- Paid model IDs remain allowlisted for deliberate selection, but the server does not automatically fall back from the free router to a paid model.
 - Provider credentials are server-only and intentionally not stored in source code.
 
 ## Local backend setup
@@ -19,7 +20,7 @@ The existing static HTML/CSS/JavaScript workspace remains available on GitHub Pa
 2. Copy `.env.example` to `.env.local`.
 3. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from the Supabase project.
 4. Set `OPENROUTER_API_KEY` in the server environment. Never commit it or expose it to browser code.
-5. Keep `OPENROUTER_BASE_URL=https://openrouter.ai/api/v1` and `OPENROUTER_DEFAULT_MODEL=anthropic/claude-opus-5` unless deliberately changed.
+5. Keep `OPENROUTER_BASE_URL=https://openrouter.ai/api/v1` and `OPENROUTER_DEFAULT_MODEL=openrouter/free` for the free-first configuration.
 6. Configure Supabase Auth Site URL and redirect URL `http://localhost:3000/auth/callback`.
 7. Configure SMTP before enabling real users.
 8. Run `npm install`, `npm test`, `npm run typecheck`, `npm run build`, then `npm run dev`.
@@ -33,7 +34,7 @@ The existing static HTML/CSS/JavaScript workspace remains available on GitHub Pa
 - The new backend is not production-ready until the checklist in `docs/production-readiness.md` is completed.
 
 ## Deployment status
-Vercel project creation was previously rejected by the selected team with HTTP 402 (`resource_creation_blocked`). Resolve the team's fair-use/billing restriction before linking or deploying the project. GitHub Pages remains independent and continues serving the existing static app.
+Vercel project creation was previously rejected by the selected team with HTTP 402 (`resource_creation_blocked`). GitHub Pages remains independent and continues serving the existing static app. Cloudflare deployment compatibility still needs to be validated before choosing it as the backend host.
 
 ## Remaining integration work
 Durable worker/queue, embeddings/vector retrieval, document malware scanning, media rendering/export, social platform OAuth publishing, Web3 provider credentials, billing, observability and external penetration testing are not yet implemented.
