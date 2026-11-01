@@ -222,7 +222,7 @@ async function executeTask(
             ? "Save Memory (" + String(step.input.category) + "): " + String(step.input.content)
             : step.tool === "memory.search"
               ? "Search saved Memory for: " + String(step.input.query)
-              : "Run model step: " + String(step.input.prompt)).slice(0, 700)
+              : "Run model step: " + String(step.input.prompt)).slice(0, 12000)
         },
         lease_expires_at: null, updated_at: now
       }).eq("id", task.id);
