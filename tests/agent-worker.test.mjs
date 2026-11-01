@@ -24,7 +24,7 @@ test("internal worker endpoint checks a shared secret and documents the side-eff
   assert.match(route, /constantTimeMatch/);
   assert.match(route, /AGENT_WORKER_SECRET/);
   assert.match(route, /SUPABASE_SERVICE_ROLE_KEY/);
-  assert.match(route, /Do not claim to have used external tools/);
+  assert.match(route, /Never claim to have used an external service/);
 });
 
 test("Cloudflare schedules the worker and keeps secrets out of vars", () => {
