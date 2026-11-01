@@ -228,3 +228,15 @@ test("RLS initplan warnings and duplicate Workflow indexes are addressed", () =>
   assert.match(rlsOptimizationMigration, /drop index if exists public\.workflow_step_runs_run_step_unique/);
   assert.match(rlsOptimizationMigration, /drop index if exists public\.workflow_steps_run_idx/);
 });
+
+
+const researchModule = fs.readFileSync("lib/agent/research.mjs", "utf8");
+
+test("web research page retrieval is bounded, HTTPS-only, and redirect-validated", () => {
+  assert.match(researchModule, /results\.slice\(0, 3\)/);
+  assert.match(researchModule, /startsWith\("https:\/\/"\)/);
+  assert.match(researchModule, /readLimitedText\(response, 600_000\)/);
+  assert.match(researchModule, /AbortSignal\.timeout\(8000\)/);
+  assert.match(researchModule, /redirect: "manual"/);
+  assert.match(researchModule, /private\\/local destinations/);
+});
