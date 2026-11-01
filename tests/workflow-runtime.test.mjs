@@ -99,3 +99,9 @@ test("tasks without a saved Workflow receive a validated model-generated plan", 
   assert.match(worker, /agent_plan_persist_failed/);
   assert.match(worker, /task\.plan/);
 });
+
+test("expired approved tasks remain resumable after their lease expires", () => {
+  const recovery = fs.readFileSync("supabase/migrations/20261101205546_preserve_approved_task_on_lease_recovery.sql", "utf8");
+  assert.match(recovery, /approval ->> 'decision', ''\) <> 'approved'/);
+  assert.match(recovery, /then 'queued'/);
+});
