@@ -111,3 +111,9 @@ test("an Agent task can have only one durable Workflow run", () => {
   assert.match(migration, /create unique index if not exists workflow_runs_agent_task_id_unique/);
   assert.match(migration, /where agent_task_id is not null/);
 });
+
+test("Cloudflare deploy script validates all secrets before deploying", () => {
+  const script = fs.readFileSync("scripts/deploy-cloudflare.sh", "utf8");
+  assert.ok(script.indexOf("for secret_name in OPENROUTER_API_KEY SUPABASE_SERVICE_ROLE_KEY AGENT_WORKER_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID") < script.indexOf("npx opennextjs-cloudflare deploy"));
+  assert.match(script, /wrangler secret put "\$secret_name"/);
+});
