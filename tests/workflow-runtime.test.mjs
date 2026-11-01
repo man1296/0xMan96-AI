@@ -125,25 +125,26 @@ test("the platform home routes authenticated users into the unified workspace", 
   assert.match(home, /href="\/login"/);
 });
 
+
 const workflowScheduleApi = fs.readFileSync("app/api/v1/workflows/[id]/route.ts", "utf8");
 const scheduleMigration = fs.readFileSync("supabase/migrations/20261101220657_workflow_schedule_dispatcher.sql", "utf8");
 
 test("scheduled Workflows enqueue durable tasks atomically from the worker tick", () => {
-  assert.match(workflowApi, /scheduleInterval: z\\.enum\\(\\["hourly", "daily", "weekly"\\]\\)/);
-  assert.match(workflowApi, /trigger_type: value\\.scheduleInterval \\? "schedule" : "manual"/);
+  assert.match(workflowApi, /scheduleInterval: z\.enum\(\["hourly", "daily", "weekly"\]\)/);
+  assert.match(workflowApi, /trigger_type: value\.scheduleInterval \? "schedule" : "manual"/);
   assert.match(worker, /enqueue_due_workflow_schedules/);
   assert.match(worker, /scheduledEnqueued/);
   assert.match(scheduleMigration, /for update skip locked/i);
-  assert.match(scheduleMigration, /insert into public\\.agent_tasks/i);
-  assert.match(scheduleMigration, /insert into public\\.workflow_runs/i);
+  assert.match(scheduleMigration, /insert into public\.agent_tasks/i);
+  assert.match(scheduleMigration, /insert into public\.workflow_runs/i);
   assert.match(scheduleMigration, /workflow_definitions_due_schedule_idx/);
 });
 
 test("scheduled Workflows can be paused and resumed by their authenticated owner", () => {
-  assert.match(workflowScheduleApi, /supabase\\.auth\\.getUser/);
-  assert.match(workflowScheduleApi, /workflow\\.trigger_type !== "schedule"/);
-  assert.match(workflowScheduleApi, /enabled: parsed\\.data\\.enabled/);
+  assert.match(workflowScheduleApi, /supabase\.auth\.getUser/);
+  assert.match(workflowScheduleApi, /workflow\.trigger_type !== "schedule"/);
+  assert.match(workflowScheduleApi, /enabled: parsed\.data\.enabled/);
   assert.match(workflowScheduleApi, /next_run_at:/);
-  assert.match(scheduleMigration, /revoke all on function private\\.enqueue_due_workflow_schedules\\(integer\\) from public, anon, authenticated/i);
-  assert.match(scheduleMigration, /grant execute on function private\\.enqueue_due_workflow_schedules\\(integer\\) to service_role/i);
+  assert.match(scheduleMigration, /revoke all on function private\.enqueue_due_workflow_schedules\(integer\) from public, anon, authenticated/i);
+  assert.match(scheduleMigration, /grant execute on function private\.enqueue_due_workflow_schedules\(integer\) to service_role/i);
 });
