@@ -1,6 +1,7 @@
+import { env as cloudflareEnv } from "cloudflare:workers";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-export type RuntimeEnvSource = "process_env" | "open_next_context" | "missing";
+export type RuntimeEnvSource = "process_env" | "cloudflare_workers" | "open_next_context" | "missing";
 
 export interface RuntimeEnvResult {
   value: string | undefined;
@@ -9,8 +10,8 @@ export interface RuntimeEnvResult {
 
 /**
  * Read server-side configuration from the Cloudflare Worker runtime.
- * Use literal bracket access so each key is statically identifiable without
- * relying on a dynamic property name or dot-property replacement.
+ * Prefer Cloudflare's official global env binding for secrets, then process.env
+ * for compatibility, then the OpenNext request context for ordinary bindings.
  * Never log or expose returned secret values.
  */
 function readProcessEnv(name: string): string | undefined {
@@ -33,6 +34,11 @@ function readProcessEnv(name: string): string | undefined {
 }
 
 export async function readRuntimeEnv(name: string): Promise<RuntimeEnvResult> {
+  const cloudflareValue = cloudflareEnv[name];
+  if (typeof cloudflareValue === "string" && cloudflareValue.length > 0) {
+    return { value: cloudflareValue, source: "cloudflare_workers" };
+  }
+
   const runtimeValue = readProcessEnv(name);
   if (runtimeValue && runtimeValue.length > 0) {
     return { value: runtimeValue, source: "process_env" };
