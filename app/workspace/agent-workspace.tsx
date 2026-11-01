@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 
 type Agent = { id: string; name: string; description?: string; instructions?: string };
-type Workflow = { id: string; name: string; description?: string; steps: Array<{ name: string; tool: string; input: Record<string, unknown>; requiresApproval: boolean }> };
+type Workflow = { id: string; name: string; description?: string; trigger_type?: string; trigger_config?: { interval?: string }; enabled?: boolean; next_run_at?: string | null; last_triggered_at?: string | null; steps: Array<{ name: string; tool: string; input: Record<string, unknown>; requiresApproval: boolean }> };
 type WorkflowRun = { id: string; workflow_id: string | null; agent_task_id: string | null; status: string; created_at: string; started_at?: string | null; completed_at?: string | null };
 type WorkflowStepRun = { id: string; run_id: string; step_index: number; name: string; status: string; requires_approval: boolean; input: Record<string, unknown>; output?: Record<string, unknown> | null; error_code?: string | null };
 type AgentTask = {
@@ -66,6 +66,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
   const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
   const [workflowName, setWorkflowName] = useState("");
   const [workflowStepsText, setWorkflowStepsText] = useState("Research the task and identify reliable sources.\nSynthesize the findings into a clear final answer.");
+  const [scheduleInterval, setScheduleInterval] = useState<"manual" | "hourly" | "daily" | "weekly">("manual");
   const [savingWorkflow, setSavingWorkflow] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [memoryText, setMemoryText] = useState("");
@@ -198,6 +199,7 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
           agentId: agents[0]?.id,
           name: workflowName.trim(),
           description: "User-defined sequential Agent workflow.",
+          scheduleInterval: scheduleInterval === "manual" ? undefined : scheduleInterval,
           steps: lines.map((prompt, index) => ({
             id: "step-" + (index + 1),
             name: "Step " + (index + 1),
@@ -209,12 +211,27 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
       });
       const data = await readJson<{ workflow: Workflow }>(response);
       setWorkflowName("");
+      setScheduleInterval("manual");
       await loadWorkflows();
       setSelectedWorkflowId(data.workflow.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "workflow_create_failed");
     } finally {
       setSavingWorkflow(false);
+    }
+  }
+
+  async function setWorkflowEnabled(workflowId: string, enabled: boolean) {
+    setError("");
+    try {
+      await readJson(await fetch("/api/v1/workflows/" + encodeURIComponent(workflowId), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workspaceId, enabled })
+      }));
+      await loadWorkflows();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "workflow_update_failed");
     }
   }
 
@@ -396,8 +413,9 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
                   {workflows.map(workflow => <article key={workflow.id} style={{ background: "#0c0e16", border: "1px solid #2c3041", borderRadius: 10, padding: 13 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}><strong>{workflow.name}</strong><span style={{ ...muted, fontSize: 11 }}>{workflow.steps?.length ?? 0} steps</span></div>
                     <p style={{ ...muted, fontSize: 12, lineHeight: 1.5 }}>{workflow.description || "Sequential Agent workflow"}</p>
+                    <p style={{ ...muted, fontSize: 11 }}>{workflow.trigger_type === "schedule" ? `Scheduled · every ${workflow.trigger_config?.interval ?? "unknown interval"} · ${workflow.enabled ? "active" : "paused"}` : "Manual workflow"}{workflow.next_run_at ? ` · next run ${new Date(workflow.next_run_at).toLocaleString()}` : ""}</p>
                     <ol style={{ paddingLeft: 20, marginBottom: 0, fontSize: 12, lineHeight: 1.7 }}>{workflow.steps?.map((step, index) => <li key={step.name + index}>{step.name}: {String(step.input?.prompt ?? step.tool)}</li>)}</ol>
-                    <button type="button" onClick={() => { setSelectedWorkflowId(workflow.id); setTab("chat"); }} style={{ ...button, marginTop: 12 }}>Use workflow</button>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}><button type="button" onClick={() => { setSelectedWorkflowId(workflow.id); setTab("chat"); }} style={button}>Use workflow</button>{workflow.trigger_type === "schedule" && <button type="button" onClick={() => void setWorkflowEnabled(workflow.id, !workflow.enabled)} style={button}>{workflow.enabled ? "Pause schedule" : "Resume schedule"}</button>}</div>
                   </article>)}
                 </div>
               </div>
@@ -405,10 +423,12 @@ export default function AgentWorkspace({ workspaceId, workspaceName, userEmail }
                 <h3 style={{ margin: 0, fontSize: 16 }}>Create workflow</h3>
                 <label style={{ fontSize: 12, ...muted }} htmlFor="workflow-name">Workflow name</label>
                 <input id="workflow-name" value={workflowName} onChange={event => setWorkflowName(event.target.value)} maxLength={160} required placeholder="Research and summarize" style={{ background: "#0c0e16", border: "1px solid #393d52", borderRadius: 9, padding: 10, color: "#f5f3ff" }} />
+                <label style={{ fontSize: 12, ...muted }} htmlFor="workflow-schedule">Run schedule</label>
+                <select id="workflow-schedule" value={scheduleInterval} onChange={event => setScheduleInterval(event.target.value as "manual" | "hourly" | "daily" | "weekly")} style={{ background: "#0c0e16", border: "1px solid #393d52", borderRadius: 9, padding: 10, color: "#f5f3ff" }}><option value="manual">Manual only</option><option value="hourly">Every hour</option><option value="daily">Every 24 hours</option><option value="weekly">Every 7 days</option></select>
                 <label style={{ fontSize: 12, ...muted }} htmlFor="workflow-steps">Steps, one instruction per line (max 6)</label>
                 <textarea id="workflow-steps" value={workflowStepsText} onChange={event => setWorkflowStepsText(event.target.value)} rows={8} maxLength={12000} required style={{ width: "100%", boxSizing: "border-box", background: "#0c0e16", border: "1px solid #393d52", borderRadius: 10, padding: 12, color: "#f5f3ff", font: "inherit" }} />
                 <button type="submit" disabled={savingWorkflow || !workflowName.trim()} style={{ ...button, background: "#a98bf4", borderColor: "#a98bf4", color: "#171320", fontWeight: 800 }}>{savingWorkflow ? "Saving…" : "Save workflow"}</button>
-                <p style={{ ...muted, fontSize: 11, lineHeight: 1.5, margin: 0 }}>Current workflow editor creates reasoning steps. Memory search/save are available to the server runtime as allowlisted tools and approval is mandatory for memory writes.</p>
+                <p style={{ ...muted, fontSize: 11, lineHeight: 1.5, margin: 0 }}>Scheduled workflows enqueue a run automatically at the selected interval. You can pause or resume them from the library. Memory writes always require approval.</p>
               </form>
             </section>
           )}
