@@ -62,3 +62,23 @@ test("task creation and approval transitions use server-side credentials", () =>
   assert.match(approval, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(approval, /admin\.from\("agent_tasks"\)\.update/);
 });
+
+test("approval is bound to an immutable step fingerprint and a visible action summary", () => {
+  assert.match(worker, /fingerprintStep\(step\)/);
+  assert.match(worker, /approval\.step_fingerprint === stepFingerprint/);
+  assert.match(worker, /Save Memory \(/);
+  assert.match(approval, /approval\.step_fingerprint/);
+});
+
+test("worker bounds concurrency and leases cover a full six-step plan", () => {
+  const lease = fs.readFileSync("supabase/migrations/20261101205225_agent_task_long_workflow_lease.sql", "utf8");
+  assert.match(lease, /interval '12 minutes'/);
+  assert.match(worker, /claim_agent_tasks", \{ p_limit: 2 \}/);
+  assert.match(worker, /Promise\.all\(claimedTasks\.map/);
+});
+
+test("public rate limit RPC is SECURITY INVOKER", () => {
+  const migration = fs.readFileSync("supabase/migrations/20261101204658_move_rate_limit_definer_private.sql", "utf8");
+  assert.match(migration, /create or replace function public\.consume_api_rate_limit[\s\S]*?security invoker/i);
+  assert.match(migration, /create or replace function private\.consume_api_rate_limit[\s\S]*?security definer/i);
+});
