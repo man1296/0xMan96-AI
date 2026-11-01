@@ -34,7 +34,11 @@ export default {
               bindings.SUPABASE_SERVICE_ROLE_KEY.length > 0,
             agentWorkerSecret:
               typeof bindings.AGENT_WORKER_SECRET === "string" &&
-              bindings.AGENT_WORKER_SECRET.length > 0
+              bindings.AGENT_WORKER_SECRET.length > 0,
+            workersAiBinding:
+              typeof bindings.AI === "object" &&
+              bindings.AI !== null &&
+              typeof (bindings.AI as { run?: unknown }).run === "function"
           },
           note: "Presence checks only. Secret values are never returned."
         },
