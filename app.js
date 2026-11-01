@@ -145,7 +145,7 @@ async function runWithTools(messages,agent,onText=()=>{}){
    else if(part?.type==="error")throw Error(part.message||"AI stream failed");
   }
   if(!toolCalls.length)return text||"The model returned an empty response.";
-  const assistantCalls=toolCalls.map((call,i)=>({id:call.id||"call_"+turn+"_"+i,type:"function",function:{name:call.name,arguments:JSON.stringify(call.input||{})}}));
+  const assistantCalls=toolCalls.map((call,i)=>({id:call.id||"call_"+turn+"_"+i,type:"function",function:{name:call.name,arguments:JSON.stringify(call.input||{})},...(call.extra_content?{extra_content:call.extra_content}:{})}));
   msgs.push({role:"assistant",content:text||null,tool_calls:assistantCalls});
   for(let i=0;i<toolCalls.length;i++){
    const call=toolCalls[i];let result;
