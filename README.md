@@ -23,7 +23,7 @@ The existing static HTML/CSS/JavaScript workspace remains available on GitHub Pa
 5. Keep `OPENROUTER_BASE_URL=https://openrouter.ai/api/v1` and `OPENROUTER_DEFAULT_MODEL=openrouter/free` for the free-first configuration.
 6. Configure Supabase Auth Site URL and redirect URL `http://localhost:3000/auth/callback`.
 7. Configure SMTP before enabling real users.
-8. Run `npm install`, `npm test`, `npm run typecheck`, `npm run build`, then `npm run dev`.
+8. Run `npm install`, `npm test`, `npm run typecheck`, `npm run build`, `npx opennextjs-cloudflare build`, then `npm run dev`. For a local Workers-runtime preview, use `npm run preview`.
 
 ## Security boundaries
 - Only the Supabase URL and anon/publishable key belong in browser configuration.
@@ -34,7 +34,7 @@ The existing static HTML/CSS/JavaScript workspace remains available on GitHub Pa
 - The new backend is not production-ready until the checklist in `docs/production-readiness.md` is completed.
 
 ## Deployment status
-Vercel project creation was previously rejected by the selected team with HTTP 402 (`resource_creation_blocked`). GitHub Pages remains independent and continues serving the existing static app. Cloudflare deployment compatibility still needs to be validated before choosing it as the backend host.
+Vercel project creation was previously rejected by the selected team with HTTP 402 (`resource_creation_blocked`). The backend now has a Cloudflare Workers deployment configuration using the OpenNext adapter. GitHub Pages remains independent and continues serving the existing static app. The Cloudflare adapter build is included in CI; deployment still requires connecting a Cloudflare account and setting server-side secrets. Cloudflare deployment compatibility still needs to be validated before choosing it as the backend host.
 
 ## Remaining integration work
 Durable worker/queue, embeddings/vector retrieval, document malware scanning, media rendering/export, social platform OAuth publishing, Web3 provider credentials, billing, observability and external penetration testing are not yet implemented.
