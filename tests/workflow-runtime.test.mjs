@@ -92,3 +92,10 @@ test("manual production deployment is guarded and checks out main only", () => {
   assert.match(deploy, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(deploy, /AGENT_WORKER_SECRET/);
 });
+
+test("tasks without a saved Workflow receive a validated model-generated plan", () => {
+  assert.match(worker, /buildAgentPlan/);
+  assert.match(worker, /validateWorkflowSteps\(JSON\.parse/);
+  assert.match(worker, /agent_plan_persist_failed/);
+  assert.match(worker, /task\.plan/);
+});
