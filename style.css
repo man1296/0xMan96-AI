@@ -59,3 +59,30 @@ body.light .creator-form input,body.light .creator-form textarea,body.light .cre
 @media(max-width:620px){.topbar{position:sticky;top:0;z-index:30}.breadcrumbs{min-width:0}.top-actions{gap:8px}}
 body.light .topbar{background:rgba(248,249,251,.94)}
 body.light .msg-content strong{color:#202431}
+
+/* Corrected mobile navigation: fixed to the viewport, not the scrolling document. */
+@media(max-width:900px){
+ .main{padding-top:56px}
+ .topbar{position:fixed!important;top:0;left:0;right:0;width:100%;height:56px;z-index:50;background:rgba(11,13,18,.97);backdrop-filter:blur(14px)}
+ .sidebar{position:fixed;z-index:60;left:-280px;top:0;bottom:0;width:270px;max-height:100dvh;overflow-y:auto;transition:left .24s ease;box-shadow:15px 0 40px #0008}
+ .sidebar.open{left:0}
+ .mobile-menu{display:inline-flex!important;align-items:center;justify-content:center;position:relative;z-index:51;width:38px;height:38px;color:#e6e0ff;border:1px solid #373149;border-radius:9px;background:#191725}
+ .chat-layout{min-height:calc(100vh - 56px)}
+}
+.sidebar .brand{position:relative;padding-right:42px}
+.sidebar-close{position:absolute;right:2px;top:0;width:34px;height:34px;border:0;border-radius:9px;background:#d83b46;color:#fff;font-size:25px;line-height:1;display:grid;place-items:center;box-shadow:0 3px 12px #0005}
+.sidebar-close:hover{background:#f04b56}
+.agent-editor,.agent-run{scroll-margin-top:72px}
+.agent-run{display:flex;flex-direction:column;max-height:min(720px,calc(100vh - 100px));min-height:320px}
+.agent-run textarea{flex:0 0 auto}
+.agent-run #runAgentBtn{align-self:flex-start;flex:0 0 auto}
+.agent-output{flex:1 1 auto;min-height:90px;max-height:100%;overflow:auto;white-space:normal;overflow-wrap:anywhere;padding-right:5px}
+.agent-output p{margin:0 0 12px}
+.agent-output h1,.agent-output h2,.agent-output h3,.agent-output h4{margin:16px 0 8px;line-height:1.3}
+.agent-output ul,.agent-output ol{padding-left:23px;margin:8px 0 14px}
+.danger-btn{background:#d83b46!important;color:#fff!important}
+#agentDeleteDialog{z-index:100}
+#agentDeleteDialog .modal{border-color:#8d343d}
+#agentDeleteDialog .modal-foot{gap:10px}
+@media(max-width:620px){.agent-run{max-height:calc(100dvh - 78px);min-height:280px}.agent-output{min-height:70px}}
+body.light .topbar{background:rgba(248,249,251,.97)}
