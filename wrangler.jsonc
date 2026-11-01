@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "0xman96-ai",
-  "main": ".open-next/worker.js",
+  "main": "./custom-worker.ts",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": [
     "nodejs_compat",
